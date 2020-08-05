@@ -11,13 +11,15 @@ import java.net.Socket;
 public class ConnectionHandler implements Runnable
 {
     private Socket mySocket;
-    public ConnectionHandler(Socket socket)
+    private ThreadCommunicationChannel commChannel;
+    public ConnectionHandler(Socket socket, ThreadCommunicationChannel comm)
     {
         if (socket == null)
         {
             throw new NullPointerException("Socket argument to ConnectionHandler cannot be null.");
         }
         this.mySocket = socket;
+        this.commChannel = comm;
     }
     public void run()
     {
