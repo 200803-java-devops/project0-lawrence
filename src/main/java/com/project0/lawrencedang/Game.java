@@ -1,5 +1,6 @@
 package com.project0.lawrencedang;
 
+import java.io.IOException;
 import java.util.Random;
 
 public class Game implements Runnable
@@ -9,12 +10,14 @@ public class Game implements Runnable
 
     private GameState state;
     private Random rng;
+    private Thread commThread;
     private ThreadCommunicationChannel commChannel;
-    public Game(ThreadCommunicationChannel comm)
+    public Game(ThreadCommunicationChannel comm,Thread commThread)
     {  
         this.commChannel = comm;
-        state = new GameState();
-        rng = new Random();
+        this.commThread = commThread;
+        this.state = new GameState();
+        this.rng = new Random();
     }
 
     public void run()
@@ -25,20 +28,29 @@ public class Game implements Runnable
     private void runGame()
     {
         dealFirstCards();
-        if(!earlyEnd())
+        try
         {
-            sendStateToPlayer(state);
-            handlePlayerOptions(state);
-            if(state.getPlayerState() != PlayerState.BUST)
+            if(!earlyEnd())
             {
-                dealerTurn();
+                sendStateToPlayer(state);
+                handlePlayerOptions(state);
+                if(state.getPlayerState() != PlayerState.BUST)
+                {
+                    dealerTurn();
+                }
             }
+            resolveGame();
+            sendStateToPlayer(state);
         }
-        resolveGame();
-        sendStateToPlayer(state);
+        catch (IOException e)
+        {
+            System.out.println("Client handler thread died. Terminating game thread.");
+            return;
+        }
+        
     }
 
-    private void handlePlayerOptions(GameState state)
+    private void handlePlayerOptions(GameState state) throws IOException
     {
         PlayerState playerState = state.getPlayerState();
         while(playerState == PlayerState.PLAYING)
@@ -59,15 +71,29 @@ public class Game implements Runnable
         }
     } 
 
-    private void sendStateToPlayer(GameState state)
+    private void sendStateToPlayer(GameState state) throws IOException
     {
-        commChannel.putState(state);
+        if(commThread.isAlive())
+        {
+            commChannel.putState(state);
+        }
+        else
+        {
+            throw new IOException("Client handler thread died.");
+        }
     }
 
-    private int readPlayerInput()
+    private int readPlayerInput() throws IOException
     {
-        int option = commChannel.takeOption();
-        return option;
+        if(commThread.isAlive())
+        {
+            int option = commChannel.takeOption();
+            return option;
+        }
+        else
+        {
+            throw new IOException("Client handler thread died.");
+        }
     }
 
     private int dealCard()
