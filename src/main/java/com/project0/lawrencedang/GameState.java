@@ -1,18 +1,16 @@
 package com.project0.lawrencedang;
 
-import java.util.Random;
-
 public class GameState {
 
     private int dealerTotal;
     private int playerTotal;
     private PlayerState playerState;
-    private Random rng;
+    private EndState endState;
+    
     public GameState()
     {
         dealerTotal = 0;
         playerTotal = 0;
-        rng = new Random();
         playerState = PlayerState.PLAYING;
     }
 
@@ -31,83 +29,29 @@ public class GameState {
         return playerState;
     }
 
-    public void dealFirstCards()
+    public EndState getEndState()
     {
-        dealerTotal = rng.nextInt(20)+2;
-        playerTotal = rng.nextInt(20)+2;
+        return endState;
     }
 
-    public boolean earlyEnd()
+    public void addDealerTotal(int val)
     {
-        if (playerTotal >= 21 || dealerTotal >= 21)
-        {
-            return true;
-        }
-        return false;
+        dealerTotal += val;
     }
 
-    public void hitPlayer()
+    public void addPlayerTotal(int val)
     {
-        playerTotal += rng.nextInt(12)+1;
-        updatePlayerStateAfterHit();
+        playerTotal += val;
     }
 
-    public void standPlayer()
+    public void setPlayerState(PlayerState state)
     {
-        playerState = PlayerState.STAND;
+        playerState = state;
     }
 
-    public void dealerTurn()
+    public void setEndState(EndState state)
     {
-        while(dealerTotal < 17)
-        {
-            dealerTotal += rng.nextInt(12)+1;
-        }
-    }
-
-    public EndState resolveGame()
-    {
-        if (playerState == PlayerState.BUST)
-        {
-            return EndState.LOSE;
-        }
-        else if (playerTotal == dealerTotal)
-        {
-            return EndState.TIE;
-        }
-        else if (playerTotal == 21 && dealerTotal != 21)
-        {
-            return EndState.BLACKJACK;
-        }
-        else if (dealerTotal > 21)
-        {
-            return EndState.WIN;
-        }
-        else if (playerTotal < dealerTotal)
-        {
-            return EndState.LOSE;
-        }
-        else // playerTotal > dealerTotal AND less than 21
-        {
-            return EndState.WIN;
-        }
-
-    }
-
-    private void updatePlayerStateAfterHit()
-    {
-        if(playerTotal>21)
-        {
-            playerState = PlayerState.BUST;
-        }
-        else if (playerTotal == 21)
-        {
-            playerState = PlayerState.STAND;
-        }
-        else
-        {
-            playerState = PlayerState.PLAYING;
-        }
+        endState = state;
     }
 
 }

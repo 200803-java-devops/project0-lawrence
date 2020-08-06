@@ -1,17 +1,21 @@
 package com.project0.lawrencedang;
 
 public class ThreadCommunicationChannel {
-    public String message;
-    public boolean hasMessage;
+    private GameState newState;
+    private boolean hasStateUpdate;
+    private int playerOption;
+    private boolean hasPlayerOption;
 
     public ThreadCommunicationChannel() {
-        hasMessage = false;
-        message = null;
+        hasStateUpdate = false;
+        newState = null;
+        hasPlayerOption = false;
+        playerOption = -1;
     }
 
-    public String takeMessage() {
+    public GameState takeState() {
         synchronized (this) {
-            while (!hasMessage) {
+            while (!hasStateUpdate) {
                 try 
                 {
                     wait();
@@ -21,15 +25,15 @@ public class ThreadCommunicationChannel {
             }
         }
 
-        String retrievedMessage = message;
-        hasMessage = false;
+        GameState retrievedState = newState;
+        hasStateUpdate = false;
         notifyAll();
-        return retrievedMessage;
+        return retrievedState;
     }
 
-    public void putMessage(String msg) {
+    public void putState(GameState state) {
         synchronized (this) {
-            while (hasMessage) {
+            while (hasStateUpdate) {
                 try 
                 {
                     wait();
@@ -39,8 +43,43 @@ public class ThreadCommunicationChannel {
             }
         }
 
-        message = msg;
-        hasMessage = true;
+        newState = state;
+        hasStateUpdate= true;
+        notifyAll();
+    }
+
+    public int takeOption() {
+        synchronized (this) {
+            while (!hasPlayerOption) {
+                try 
+                {
+                    wait();
+                } catch (InterruptedException e) 
+                {
+                }
+            }
+        }
+
+        int retrievedOption = playerOption;
+        hasPlayerOption = false;
+        notifyAll();
+        return retrievedOption;
+    }
+
+    public void putOption(int option) {
+        synchronized (this) {
+            while (hasPlayerOption) {
+                try 
+                {
+                    wait();
+                } catch (InterruptedException e) 
+                {
+                }
+            }
+        }
+
+        playerOption = option;
+        hasPlayerOption = true;
         notifyAll();
     }
 }

@@ -6,6 +6,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
+import java.io.PrintStream;
 import java.net.Socket;
 
 public class ConnectionHandler implements Runnable
@@ -14,9 +15,9 @@ public class ConnectionHandler implements Runnable
     private ThreadCommunicationChannel commChannel;
     public ConnectionHandler(Socket socket, ThreadCommunicationChannel comm)
     {
-        if (socket == null)
+        if (socket == null || commChannel == null)
         {
-            throw new NullPointerException("Socket argument to ConnectionHandler cannot be null.");
+            throw new NullPointerException("Arguments to ConnectionHandler cannot be null.");
         }
         this.mySocket = socket;
         this.commChannel = comm;
@@ -28,33 +29,13 @@ public class ConnectionHandler implements Runnable
             InputStream inputStream = mySocket.getInputStream();
             InputStreamReader inputStreamReader = new InputStreamReader(inputStream);
             BufferedReader bufferedReader = new BufferedReader(inputStreamReader);
-            OutputStream outputStream = mySocket.getOutputStream();
-            OutputStreamWriter outputStreamWriter = new OutputStreamWriter(outputStream);
+            PrintStream printStream = new PrintStream(mySocket.getOutputStream());
             String message = null;
-            while(message == null || message.compareTo("quit") != 0)
-            {
-                if(!bufferedReader.ready())
-                {
-                    System.out.println("sleeping");
-                    Thread.sleep(500);
-                }
-                else
-                {
-                    message = bufferedReader.readLine().trim();
-                    System.out.println(message);
-                    outputStreamWriter.write(message +"\n");
-                    outputStreamWriter.flush();
-                }
-            }
-            this.mySocket.close();
         }
         catch (IOException e)
         {
             System.err.println("ConnectionHandler: Problem encountered when reading input stream from socket.");
         }
-        catch (InterruptedException e)
-        {
-            Thread.currentThread().interrupt();
-        }
+
     }
 }

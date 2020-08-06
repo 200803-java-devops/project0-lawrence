@@ -10,8 +10,6 @@ import java.net.Socket;
  */
 public class Server {
     public static final int MAX_CONNECTIONS= 4;
-    public static final String GAME_STATE_STRING_FORMAT = "STATE %d %d";
-    public static final String END_STATE_STRING_FORMAT = "END %s";
 
     private ServerSocket server;
     private Thread gameThread;
@@ -57,55 +55,6 @@ public class Server {
         }
     }
 
-    public void runGame()
-    {
-        GameState state = new GameState();
-        state.dealFirstCards();
-        sendStateToPlayer(state);
-        if(state.earlyEnd())
-        {
-            handlePlayerOptions(state);
-            state.dealerTurn();
-        }
-        EndState endState = state.resolveGame();
-        sendResultsToPlayer(endState);
-    }
-
-    private void handlePlayerOptions(GameState state)
-    {
-        PlayerState playerState = state.getPlayerState();
-        while(playerState == PlayerState.PLAYING)
-        {
-            int option = readPlayerInput();
-            switch(option)
-            {
-                case 1:
-                    state.hitPlayer();
-                case 2:
-                    state.standPlayer();
-            }
-            playerState = state.getPlayerState();
-            sendStateToPlayer(state);
-        }
-    } 
-
-    private void sendStateToPlayer(GameState state)
-    {
-        String stateString = String.format(GAME_STATE_STRING_FORMAT, state.getDealerTotal(), state.getPlayerTotal());
-        commChannel.putMessage(stateString);
-    }
-
-    private int readPlayerInput()
-    {
-        String option = commChannel.takeMessage();
-        return Integer.parseInt(option.trim());
-    }
-
-    private void sendResultsToPlayer(EndState endState)
-    {
-        String endString = String.format(END_STATE_STRING_FORMAT, endState.name());
-        commChannel.putMessage(endString);
-    }
 
     public static void main(String[] args) {
         int port = 5643;
