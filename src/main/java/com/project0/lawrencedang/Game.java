@@ -3,6 +3,11 @@ package com.project0.lawrencedang;
 import java.io.IOException;
 import java.util.Random;
 
+/**
+ * Game is a class that implements the game logic for Blackjack. It is intended to be run from a thread.
+ * It stores the current state of the game in a GameState object.
+ * It can communicate state and player options with a CommunicationHandler using a shared ThreadCommunicationChannel Object.
+ */
 public class Game implements Runnable
 {
     public static final String GAME_STATE_STRING_FORMAT = "STATE %d %d";
@@ -12,6 +17,14 @@ public class Game implements Runnable
     private Random rng;
     private Thread commThread;
     private ThreadCommunicationChannel commChannel;
+    /**
+     * Creates a new Game object with the specified ThreadCommunicationChannel,
+     * which should be shared to the CommunicationHandler run by commThread.
+     * commThread is used to get the status of the CommunicationHandler thread, to allow this thread to die
+     * if the commThread is dead.
+     * @param comm The shared ThreadCommunicationChannel between the Game and the ConnectionHandler.
+     * @param commThread The thread running the ConnectionHandler.
+     */
     public Game(ThreadCommunicationChannel comm,Thread commThread)
     {  
         this.commChannel = comm;
@@ -20,6 +33,9 @@ public class Game implements Runnable
         this.rng = new Random();
     }
 
+    /**
+     * Starts running the game logic.
+     */
     public void run()
     {
         runGame();
@@ -30,17 +46,17 @@ public class Game implements Runnable
         dealFirstCards();
         try
         {
-            if(!earlyEnd())
+            if(!isEarlyEnd())
             {
-                sendStateToPlayer(state);
-                handlePlayerOptions(state);
+                sendStateToPlayer();
+                handlePlayerOptions();
                 if(state.getPlayerState() != PlayerState.BUST)
                 {
                     dealerTurn();
                 }
             }
             resolveGame();
-            sendStateToPlayer(state);
+            sendStateToPlayer();
         }
         catch (IOException e)
         {
@@ -50,7 +66,7 @@ public class Game implements Runnable
         
     }
 
-    private void handlePlayerOptions(GameState state) throws IOException
+    private void handlePlayerOptions() throws IOException
     {
         PlayerState playerState = state.getPlayerState();
         while(playerState == PlayerState.PLAYING)
@@ -66,12 +82,12 @@ public class Game implements Runnable
             playerState = state.getPlayerState();
             if(state.getPlayerState() == PlayerState.PLAYING)
             {
-                sendStateToPlayer(state);
+                sendStateToPlayer();
             }
         }
     } 
 
-    private void sendStateToPlayer(GameState state) throws IOException
+    private void sendStateToPlayer() throws IOException
     {
         if(commThread.isAlive())
         {
@@ -109,7 +125,7 @@ public class Game implements Runnable
         state.addDealerTotal(dealCard());
     }
 
-    private boolean earlyEnd()
+    private boolean isEarlyEnd()
     {
         if (state.getPlayerTotal() >= 21 || state.getDealerTotal() >= 21)
         {
@@ -180,4 +196,5 @@ public class Game implements Runnable
             state.setPlayerState(PlayerState.PLAYING); 
         }
     }
+    
 }

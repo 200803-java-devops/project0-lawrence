@@ -5,16 +5,23 @@ import java.net.ServerSocket;
 import java.net.Socket;
 
 /**
- * Hello world!
- *
+ * Server is a class that acts as the server for the multiplayer blackjack game.
+ * It waits for a client(s) to connect then spawns one thread to handle communicating with the client
+ * and one thread to handle the game logic.
  */
 public class Server {
     public static final int MAX_CONNECTIONS= 4;
 
     private ServerSocket server;
     private Thread gameThread;
-    ThreadCommunicationChannel commChannel;
+    private Thread handlerThread;
 
+
+    /**
+     * Creates a Server with the specified port.
+     * @param port the port number to listen for connections on.
+     * @throws IOException
+     */
     public Server(int port) throws IOException
     {
         try 
@@ -27,9 +34,11 @@ public class Server {
             System.err.println("Failed to start server");
             throw e;
         }
-        commChannel = new ThreadCommunicationChannel();
     }
 
+    /**
+     * Listens for incoming connections, then creates threads to handle client actions and game logic.
+     */
     public void listen()
     {
         Socket socket = null;
@@ -43,9 +52,13 @@ public class Server {
             {
                 System.err.println("Problem while listening for connections.");
             }
-            ConnectionHandler handler = new ConnectionHandler(socket, commChannel);
-            gameThread = new Thread(handler);
+
+            ThreadCommunicationChannel comm = new ThreadCommunicationChannel();
+            ConnectionHandler handler = new ConnectionHandler(socket, comm);
+            gameThread = new Thread(new Game(comm, handlerThread));
             gameThread.start();
+            handlerThread = new Thread(handler);
+            handlerThread.start();
             /*if(connections == MAX_CONNECTIONS)
             {
                 runGame();

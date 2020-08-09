@@ -8,4 +8,3 @@ An online 4-player game on the command-line.
     - [ ] Has a username and password database. 
     - [ ] Player's score persists through multiple sessions.
 - [ ] Has a leaderboard of high scores.
-- [ ] One server can host multiple rooms of four players.

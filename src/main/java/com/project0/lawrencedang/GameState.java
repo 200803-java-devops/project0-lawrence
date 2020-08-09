@@ -12,6 +12,7 @@ public class GameState {
         dealerTotal = 0;
         playerTotal = 0;
         playerState = PlayerState.PLAYING;
+        endState = EndState.NA;
     }
 
     public int getDealerTotal()

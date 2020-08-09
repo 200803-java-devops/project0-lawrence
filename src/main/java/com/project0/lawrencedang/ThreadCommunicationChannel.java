@@ -13,15 +13,14 @@ public class ThreadCommunicationChannel {
         playerOption = -1;
     }
 
-    public GameState takeState() {
-        synchronized (this) {
-            while (!hasStateUpdate) {
-                try 
-                {
-                    wait();
-                } catch (InterruptedException e) 
-                {
-                }
+    public synchronized GameState takeState() 
+    {
+        while (!hasStateUpdate) {
+            try 
+            {
+                wait();
+            } catch (InterruptedException e) 
+            {
             }
         }
 
@@ -31,32 +30,32 @@ public class ThreadCommunicationChannel {
         return retrievedState;
     }
 
-    public void putState(GameState state) {
-        synchronized (this) {
-            while (hasStateUpdate) {
-                try 
-                {
-                    wait();
-                } catch (InterruptedException e) 
-                {
-                }
+    public synchronized void putState(GameState state)
+    {
+
+        while (hasStateUpdate) {
+            try 
+            {
+                wait();
+            } catch (InterruptedException e) 
+            {
             }
         }
+    
 
         newState = state;
         hasStateUpdate= true;
         notifyAll();
     }
 
-    public int takeOption() {
-        synchronized (this) {
-            while (!hasPlayerOption) {
-                try 
-                {
-                    wait();
-                } catch (InterruptedException e) 
-                {
-                }
+    public synchronized int takeOption() 
+    {
+        while (!hasPlayerOption) {
+            try 
+            {
+                wait();
+            } catch (InterruptedException e) 
+            {
             }
         }
 
@@ -66,18 +65,17 @@ public class ThreadCommunicationChannel {
         return retrievedOption;
     }
 
-    public void putOption(int option) {
-        synchronized (this) {
-            while (hasPlayerOption) {
-                try 
-                {
-                    wait();
-                } catch (InterruptedException e) 
-                {
-                }
+    public synchronized void putOption(int option)
+    {
+        while (hasPlayerOption) {
+            try 
+            {
+                wait();
+            } catch (InterruptedException e) 
+            {
             }
         }
-
+        
         playerOption = option;
         hasPlayerOption = true;
         notifyAll();
