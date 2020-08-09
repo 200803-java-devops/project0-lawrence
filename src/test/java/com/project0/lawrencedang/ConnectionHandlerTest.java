@@ -7,9 +7,10 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintStream;
-import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+
+import com.google.gson.Gson;
 
 import org.junit.After;
 import org.junit.Before;
@@ -114,8 +115,9 @@ public class ConnectionHandlerTest {
                 String stateMessage = bufferedReader.readLine();
                 String messageType = stateMessage.split("\\|")[0];
                 String stateKV = stateMessage.split("\\|")[1];
-                String dealer_total = stateKV.split("/")[0].split(":")[1];
-                if(messageType.equals("STATE") && dealer_total.equals("10"))
+                String dealerHandString = stateKV.split("/")[0].split(":")[1];
+                Card[] cards = new Gson().fromJson(dealerHandString, Card[].class);
+                if(messageType.equals("STATE") && cards[0] == Card.Ten)
                 {
                     this.success = true;
                 }
@@ -169,10 +171,12 @@ public class ConnectionHandlerTest {
     public void generatesCorrectStateString()
     {
         GameState state = new GameState();
+        state.addPlayerHand(Card.Four);
+        state.addPlayerHand(Card.Ace);
         String stateString = ConnectionHandler.generateStateString(state);
         String[] stateKV = stateString.split("\\|")[1].trim().split("/");
-        assertTrue((stateKV[0].split(":")[0].equals("DEALER_TOTAL") && stateKV[0].split(":")[1].equals("0")));
-        assertTrue((stateKV[1].split(":")[0].equals("PLAYER_TOTAL") && stateKV[1].split(":")[1].equals("0")));
+        assertTrue((stateKV[0].split(":")[0].equals("DEALER_HAND") && stateKV[0].split(":")[1].equals("[]")));
+        assertTrue((stateKV[1].split(":")[0].equals("PLAYER_HAND") && stateKV[1].split(":")[1].equals("[\"Four\",\"Ace\"]")));
         assertTrue((stateKV[2].split(":")[0].equals("PLAYER_STATE") && stateKV[2].split(":")[1].equals("PLAYING")));
         assertTrue((stateKV[3].split(":")[0].equals("END_STATE") && stateKV[3].split(":")[1].equals("NA")));
 
@@ -182,7 +186,7 @@ public class ConnectionHandlerTest {
     public void sendsCorrectState() throws IOException, InterruptedException
     {
         GameState state = new GameState();
-        state.addDealerTotal(10);
+        state.addDealerHand(Card.Ten);
         commChannel.putState(state);
         SendsCorrectStateHelper helper = new SendsCorrectStateHelper();
         Thread helperThread = new Thread(helper);

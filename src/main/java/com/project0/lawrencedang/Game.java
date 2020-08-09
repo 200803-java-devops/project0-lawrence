@@ -1,6 +1,7 @@
 package com.project0.lawrencedang;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Random;
 
 /**
@@ -14,9 +15,9 @@ public class Game implements Runnable
     public static final String END_STATE_STRING_FORMAT = "END %s";
 
     private GameState state;
-    private Random rng;
     private Thread commThread;
     private ThreadCommunicationChannel commChannel;
+    private Deck deck;
     /**
      * Creates a new Game object with the specified ThreadCommunicationChannel,
      * which should be shared to the CommunicationHandler run by commThread.
@@ -30,7 +31,7 @@ public class Game implements Runnable
         this.commChannel = comm;
         this.commThread = commThread;
         this.state = new GameState();
-        this.rng = new Random();
+        this.deck = new Deck(4, new Random());
     }
 
     /**
@@ -112,22 +113,24 @@ public class Game implements Runnable
         }
     }
 
-    private int dealCard()
+    private Card dealCard()
     {
-        return rng.nextInt(11)+1;
+        return deck.takeCard();
     }
 
     private void dealFirstCards()
     {
-        state.addDealerTotal(dealCard()); 
-        state.addDealerTotal(dealCard());
-        state.addPlayerTotal(dealCard());
-        state.addDealerTotal(dealCard());
+        state.addDealerHand(dealCard()); 
+        state.addDealerHand(dealCard());
+        state.addPlayerHand(dealCard());
+        state.addPlayerHand(dealCard());
     }
 
     private boolean isEarlyEnd()
     {
-        if (state.getPlayerTotal() >= 21 || state.getDealerTotal() >= 21)
+        ArrayList<Card> playerHand = state.getPlayerHand();
+        ArrayList<Card> dealerHand = state.getDealerHand();
+        if (bestHandValue(playerHand) >= 21 || bestHandValue(dealerHand) >= 21)
         {
             return true;
         }
@@ -136,7 +139,7 @@ public class Game implements Runnable
 
     private void hitPlayer()
     {
-        state.addPlayerTotal(dealCard());
+        state.addPlayerHand(dealCard());
         updatePlayerStateAfterHit();
     }
 
@@ -147,31 +150,33 @@ public class Game implements Runnable
 
     private void dealerTurn()
     {
-        while(state.getDealerTotal() < 17)
+        while(bestHandValue(state.getDealerHand()) < 17)
         {
-            state.addDealerTotal(rng.nextInt(11)+1);
+            state.addDealerHand(dealCard());
         }
     }
 
     private void resolveGame()
     {
+        int playerHandVal =  bestHandValue(state.getPlayerHand());
+        int dealerHandVal =  bestHandValue(state.getDealerHand());
         if (state.getPlayerState() == PlayerState.BUST)
         {
             state.setEndState(EndState.LOSE);     
         }
-        else if (state.getPlayerTotal() == state.getDealerTotal())
+        else if (playerHandVal == dealerHandVal)
         {
             state.setEndState(EndState.TIE);
         }
-        else if (state.getPlayerTotal() == 21 && state.getDealerTotal() != 21)
+        else if (playerHandVal == 21 && dealerHandVal != 21)
         {
             state.setEndState(EndState.BLACKJACK);
         }
-        else if (state.getDealerTotal() > 21)
+        else if (dealerHandVal > 21)
         {
             state.setEndState(EndState.WIN);
         }
-        else if (state.getPlayerTotal() < state.getDealerTotal())
+        else if (playerHandVal < dealerHandVal)
         {
             state.setEndState(EndState.LOSE);
         }
@@ -183,11 +188,12 @@ public class Game implements Runnable
 
     private void updatePlayerStateAfterHit()
     {
-        if(state.getPlayerTotal()>21)
+        int playerHandVal = bestHandValue(state.getPlayerHand());
+        if(playerHandVal>21)
         {
             state.setPlayerState(PlayerState.BUST);
         }
-        else if (state.getPlayerTotal() == 21)
+        else if (playerHandVal == 21)
         {
             state.setPlayerState(PlayerState.STAND); 
         }
@@ -195,6 +201,11 @@ public class Game implements Runnable
         {
             state.setPlayerState(PlayerState.PLAYING); 
         }
+    }
+
+    private int bestHandValue(ArrayList<Card> cards)
+    {
+        return Card.highValueOf(cards) <= 21? Card.highValueOf(cards) : Card.lowValueOf(cards);
     }
     
 }

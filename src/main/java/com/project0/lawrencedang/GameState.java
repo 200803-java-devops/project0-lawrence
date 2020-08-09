@@ -1,28 +1,30 @@
 package com.project0.lawrencedang;
 
+import java.util.ArrayList;
+
 public class GameState {
 
-    private int dealerTotal;
-    private int playerTotal;
+    private ArrayList<Card> dealerHand;
+    private ArrayList<Card> playerHand;
     private PlayerState playerState;
     private EndState endState;
     
     public GameState()
     {
-        dealerTotal = 0;
-        playerTotal = 0;
+        dealerHand = new ArrayList<Card>();
+        playerHand = new ArrayList<Card>();
         playerState = PlayerState.PLAYING;
         endState = EndState.NA;
     }
 
-    public int getDealerTotal()
+    public ArrayList<Card> getDealerHand()
     {
-        return dealerTotal;
+        return new ArrayList<Card>(dealerHand);
     }
 
-    public int getPlayerTotal()
+    public ArrayList<Card> getPlayerHand()
     {
-        return playerTotal;
+        return new ArrayList<Card>(playerHand);
     }
 
     public PlayerState getPlayerState()
@@ -35,14 +37,14 @@ public class GameState {
         return endState;
     }
 
-    public void addDealerTotal(int val)
+    public void addDealerHand(Card card)
     {
-        dealerTotal += val;
+        dealerHand.add(card);
     }
 
-    public void addPlayerTotal(int val)
+    public void addPlayerHand(Card card)
     {
-        playerTotal += val;
+        playerHand.add(card);
     }
 
     public void setPlayerState(PlayerState state)

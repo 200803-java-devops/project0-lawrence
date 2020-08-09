@@ -5,6 +5,9 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintStream;
 import java.net.Socket;
+import java.util.ArrayList;
+
+import com.google.gson.Gson;
 
 /**
  * A ConnectionHandler serves as the bridge between the client and the game logic.
@@ -16,7 +19,7 @@ import java.net.Socket;
 public class ConnectionHandler implements Runnable
 {
     public static final String MESSAGE_TEMPLATE = "MSG|%s\n";
-    public static final String STATE_TEMPLATE = "STATE|DEALER_TOTAL:%d/PLAYER_TOTAL:%d/PLAYER_STATE:%s/END_STATE:%s\n";
+    public static final String STATE_TEMPLATE = "STATE|DEALER_HAND:%s/PLAYER_HAND:%s/PLAYER_STATE:%s/END_STATE:%s\n";
     public static final String READY = "READY|\n";
 
     private Socket mySocket;
@@ -86,6 +89,9 @@ public class ConnectionHandler implements Runnable
 
     public static String generateStateString(GameState state)
     {
-        return String.format(STATE_TEMPLATE, state.getDealerTotal(), state.getPlayerTotal(), state.getPlayerState(), state.getEndState());
+        ArrayList<Card> dealerHand = state.getDealerHand();
+        ArrayList<Card> playerHand = state.getPlayerHand();
+        Gson jsonSerializer = new Gson();
+        return String.format(STATE_TEMPLATE, jsonSerializer.toJson(dealerHand), jsonSerializer.toJson(playerHand), state.getPlayerState(), state.getEndState());
     }
 }

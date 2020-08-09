@@ -101,7 +101,7 @@ public class ThreadCommunicationChannelTest {
         assertTrue(commChannel.takeState() == state);
 
         GameState state2 = new GameState();
-        state2.addDealerTotal(10);
+        state2.addDealerHand(Card.Ten);
         commChannel.putState(state2);
         assertTrue(commChannel.takeState() == state2);
     }
