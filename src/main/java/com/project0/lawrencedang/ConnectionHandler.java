@@ -92,6 +92,7 @@ public class ConnectionHandler implements Runnable
         ArrayList<Card> dealerHand = state.getDealerHand();
         ArrayList<Card> playerHand = state.getPlayerHand();
         Gson jsonSerializer = new Gson();
-        return String.format(STATE_TEMPLATE, jsonSerializer.toJson(dealerHand), jsonSerializer.toJson(playerHand), state.getPlayerState(), state.getEndState());
+        return String.format(STATE_TEMPLATE, jsonSerializer.toJson(dealerHand), jsonSerializer.toJson(playerHand), 
+        jsonSerializer.toJson(state.getPlayerState()), jsonSerializer.toJson(state.getEndState()));
     }
 }

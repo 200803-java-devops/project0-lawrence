@@ -175,10 +175,11 @@ public class ConnectionHandlerTest {
         state.addPlayerHand(Card.Ace);
         String stateString = ConnectionHandler.generateStateString(state);
         String[] stateKV = stateString.split("\\|")[1].trim().split("/");
+        System.out.println(stateKV[2]);
         assertTrue((stateKV[0].split(":")[0].equals("DEALER_HAND") && stateKV[0].split(":")[1].equals("[]")));
         assertTrue((stateKV[1].split(":")[0].equals("PLAYER_HAND") && stateKV[1].split(":")[1].equals("[\"Four\",\"Ace\"]")));
-        assertTrue((stateKV[2].split(":")[0].equals("PLAYER_STATE") && stateKV[2].split(":")[1].equals("PLAYING")));
-        assertTrue((stateKV[3].split(":")[0].equals("END_STATE") && stateKV[3].split(":")[1].equals("NA")));
+        assertTrue((stateKV[2].split(":")[0].equals("PLAYER_STATE") && stateKV[2].split(":")[1].equals("\"PLAYING\"")));
+        assertTrue((stateKV[3].split(":")[0].equals("END_STATE") && stateKV[3].split(":")[1].equals("\"NA\"")));
 
     }
 

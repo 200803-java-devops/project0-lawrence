@@ -31,7 +31,7 @@ public class Game implements Runnable
         this.commChannel = comm;
         this.commThread = commThread;
         this.state = new GameState();
-        this.deck = new Deck(4, new Random());
+        this.deck = null;
     }
 
     /**
@@ -55,6 +55,7 @@ public class Game implements Runnable
                 {
                     dealerTurn();
                 }
+                
             }
             resolveGame();
             sendStateToPlayer();
@@ -77,11 +78,13 @@ public class Game implements Runnable
             {
                 case 1:
                     hitPlayer();
+                    break;
                 case 2:
                     standPlayer();
+                    break;
             }
             playerState = state.getPlayerState();
-            if(state.getPlayerState() == PlayerState.PLAYING)
+            if(playerState == PlayerState.PLAYING)
             {
                 sendStateToPlayer();
             }
@@ -120,6 +123,8 @@ public class Game implements Runnable
 
     private void dealFirstCards()
     {
+        this.deck = new Deck(4, new Random());
+        this.deck.shuffle();
         state.addDealerHand(dealCard()); 
         state.addDealerHand(dealCard());
         state.addPlayerHand(dealCard());
@@ -150,7 +155,7 @@ public class Game implements Runnable
 
     private void dealerTurn()
     {
-        while(bestHandValue(state.getDealerHand()) < 17)
+        while(Card.lowValueOf(state.getDealerHand()) < 17)
         {
             state.addDealerHand(dealCard());
         }
@@ -160,6 +165,7 @@ public class Game implements Runnable
     {
         int playerHandVal =  bestHandValue(state.getPlayerHand());
         int dealerHandVal =  bestHandValue(state.getDealerHand());
+        System.out.println("Resolving game");
         if (state.getPlayerState() == PlayerState.BUST)
         {
             state.setEndState(EndState.LOSE);     
@@ -201,6 +207,8 @@ public class Game implements Runnable
         {
             state.setPlayerState(PlayerState.PLAYING); 
         }
+        System.out.println(playerHandVal);
+        System.out.println(state.getPlayerState());
     }
 
     private int bestHandValue(ArrayList<Card> cards)

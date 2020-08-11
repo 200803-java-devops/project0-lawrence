@@ -26,7 +26,7 @@ public class Server {
     {
         try 
         {
-            server = new ServerSocket(8080);
+            server = new ServerSocket(port);
             gameThread = null;
         }
         catch(IOException e)
@@ -53,12 +53,13 @@ public class Server {
                 System.err.println("Problem while listening for connections.");
             }
 
+            System.out.println("Client connected");
             ThreadCommunicationChannel comm = new ThreadCommunicationChannel();
             ConnectionHandler handler = new ConnectionHandler(socket, comm);
-            gameThread = new Thread(new Game(comm, handlerThread));
-            gameThread.start();
             handlerThread = new Thread(handler);
             handlerThread.start();
+            gameThread = new Thread(new Game(comm, handlerThread));
+            gameThread.start();
             /*if(connections == MAX_CONNECTIONS)
             {
                 runGame();
