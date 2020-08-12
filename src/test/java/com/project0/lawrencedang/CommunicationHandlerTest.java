@@ -16,7 +16,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-public class ConnectionHandlerTest {
+public class CommunicationHandlerTest {
     ThreadCommunicationChannel commChannel;
     ServerSocket server;
 
@@ -48,12 +48,12 @@ public class ConnectionHandlerTest {
         }
     }
 
-    public abstract class ConnectionHandlerTestClient implements Runnable
+    public abstract class CommunicationHandlerTestClient implements Runnable
     {
         Socket clientSocket;
         public boolean success;
         public String msg;
-        public ConnectionHandlerTestClient()
+        public CommunicationHandlerTestClient()
         {
             clientSocket = null;
             success = false;
@@ -101,7 +101,7 @@ public class ConnectionHandlerTest {
         }
     }
 
-    public class SendsCorrectStateHelper extends ConnectionHandlerTestClient
+    public class SendsCorrectStateHelper extends CommunicationHandlerTestClient
     {
         protected void helperCode()
         {
@@ -135,7 +135,7 @@ public class ConnectionHandlerTest {
         }
     }
 
-    public class PutsCorrectOptionHelper extends ConnectionHandlerTestClient
+    public class PutsCorrectOptionHelper extends CommunicationHandlerTestClient
     {
         protected void helperCode()
         {
@@ -173,7 +173,7 @@ public class ConnectionHandlerTest {
         GameState state = new GameState();
         state.addPlayerHand(Card.Four);
         state.addPlayerHand(Card.Ace);
-        String stateString = ConnectionHandler.generateStateString(state);
+        String stateString = CommunicationHandler.generateStateString(state);
         String[] stateKV = stateString.split("\\|")[1].trim().split("/");
         System.out.println(stateKV[2]);
         assertTrue((stateKV[0].split(":")[0].equals("DEALER_HAND") && stateKV[0].split(":")[1].equals("[]")));
@@ -193,7 +193,7 @@ public class ConnectionHandlerTest {
         Thread helperThread = new Thread(helper);
         helperThread.start();
         Socket socket = server.accept();
-        ConnectionHandler handler = new ConnectionHandler(socket, commChannel);
+        CommunicationHandler handler = new CommunicationHandler(socket, commChannel);
         new Thread(handler).start();
         helperThread.join();
         assertTrue(helper.success);
@@ -208,7 +208,7 @@ public class ConnectionHandlerTest {
         Thread helperThread = new Thread(helper);
         helperThread.start();
         Socket socket = server.accept();
-        ConnectionHandler handler = new ConnectionHandler(socket, commChannel);
+        CommunicationHandler handler = new CommunicationHandler(socket, commChannel);
         Thread handlerThread = new Thread(handler);
         handlerThread.start();
         helperThread.join();

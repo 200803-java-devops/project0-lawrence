@@ -5,16 +5,30 @@ import java.util.List;
 public class GameState {
 
     private Hand dealerHand;
-    private Hand playerHand;
-    private PlayerState playerState;
-    private EndState endState;
+    private Hand[] playerHands;
+    private PlayerState[] playerStates;
+    private EndState[] endStates;
     
     public GameState()
     {
         dealerHand = new Hand();
-        playerHand = new Hand();
-        playerState = PlayerState.PLAYING;
-        endState = EndState.NA;
+        playerHands = new Hand[1];
+        playerStates = new PlayerState[1];
+        endStates = new EndState[1];
+        initializePlayerHands(1);
+        initializePlayerStates(1);
+        initializeEndStates(1);
+    }
+
+    public GameState(int numPlayers)
+    {
+        dealerHand = new Hand();
+        playerHands = new Hand[numPlayers];
+        playerStates = new PlayerState[numPlayers];
+        endStates = new EndState[numPlayers];
+        initializePlayerHands(numPlayers);
+        initializePlayerStates(numPlayers);
+        initializeEndStates(numPlayers);
     }
 
     public List<Card> getDealerHand()
@@ -24,17 +38,32 @@ public class GameState {
 
     public List<Card> getPlayerHand()
     {
-        return playerHand.getVisibleCards();
+        return playerHands[0].getVisibleCards();
+    }
+
+    public List<Card> getPlayerHand(int player)
+    {
+        return playerHands[player].getVisibleCards();
     }
 
     public PlayerState getPlayerState()
     {
-        return playerState;
+        return playerStates[0];
+    }
+
+    public PlayerState getPlayerState(int player)
+    {
+        return playerStates[player];
     }
 
     public EndState getEndState()
     {
-        return endState;
+        return endStates[0];
+    }
+
+    public EndState getEndState(int player)
+    {
+        return endStates[player];
     }
 
     public void addDealerHand(Card card)
@@ -54,17 +83,56 @@ public class GameState {
 
     public void addPlayerHand(Card card)
     {
-        playerHand.addVisibleCard(card);
+        playerHands[0].addVisibleCard(card);
+    }
+
+    public void addPlayerHand(int player, Card card)
+    {
+        playerHands[player].addVisibleCard(card);
     }
 
     public void setPlayerState(PlayerState state)
     {
-        playerState = state;
+        playerStates[0] = state;
+    }
+
+    public void setPlayerState(int player, PlayerState state)
+    {
+        playerStates[player] = state;
     }
 
     public void setEndState(EndState state)
     {
-        endState = state;
+        endStates[0] = state;
+    }
+
+    public void setEndState(int player, EndState state)
+    {
+        endStates[player] = state;
+    }
+
+    private void initializePlayerHands(int players)
+    {
+        for(int i = 0; i< players; i++)
+        {
+            playerHands[i]=new Hand();
+        }
+    }
+
+    private void initializePlayerStates(int players)
+    {
+        for(int i = 0; i< players; i++)
+        {
+            playerStates[i]=PlayerState.PLAYING;
+        }
+    }
+
+    private void initializeEndStates(int players)
+    {
+        for(int i = 0; i< players; i++)
+        {
+            endStates[i]=EndState.NA;
+        }
     }
 
 }

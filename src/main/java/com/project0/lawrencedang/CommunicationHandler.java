@@ -10,13 +10,13 @@ import java.util.List;
 import com.google.gson.Gson;
 
 /**
- * A ConnectionHandler serves as the bridge between the client and the game logic.
+ * A CommunicationHandler serves as the bridge between the client and the game logic.
  * It passes messages to and from the client and the game logic that update the client and/or game state.
  * It implements a simple message protocol to communicate with the client.
  * Regular messages are prefixed with MSG|, state updates are prefixed with STATE|, and the
- * notification that the ConnectionHandler is ready to accept input is READY|
+ * notification that the CommunicationHandler is ready to accept input is READY|
  */
-public class ConnectionHandler implements Runnable
+public class CommunicationHandler implements Runnable
 {
     public static final String MESSAGE_TEMPLATE = "MSG|%s\n";
     public static final String STATE_TEMPLATE = "STATE|DEALER_HAND:%s/PLAYER_HAND:%s/PLAYER_STATE:%s/END_STATE:%s\n";
@@ -25,16 +25,16 @@ public class ConnectionHandler implements Runnable
     private Socket mySocket;
     private ThreadCommunicationChannel commChannel;
     /**
-     * Creates a new ConnectionHandler for the supplied socket.
+     * Creates a new CommunicationHandler for the supplied socket.
      * Communicates with the game logic via the ThreadCommunicationChannel.
      * @param socket The socket connected to the client.
      * @param comm The ThreadCommunicationChannel shared with the game logic.
      */
-    public ConnectionHandler(Socket socket, ThreadCommunicationChannel comm)
+    public CommunicationHandler(Socket socket, ThreadCommunicationChannel comm)
     {
         if (socket == null || comm == null)
         {
-            throw new NullPointerException("Arguments to ConnectionHandler cannot be null.");
+            throw new NullPointerException("Arguments to CommunicationHandler cannot be null.");
         }
         this.mySocket = socket;
         this.commChannel = comm;
@@ -42,7 +42,7 @@ public class ConnectionHandler implements Runnable
     /**
      * Runs the logic to communicate with the client.
      * First, the client is sent a message confirming the connection.
-     * Then the ConnectionHandler repeatedly sends a state update to the client, notifies the client for a response,
+     * Then the CommunicationHandler repeatedly sends a state update to the client, notifies the client for a response,
      * then delivers the response to the game logic.
      */
     public void run()
@@ -58,7 +58,7 @@ public class ConnectionHandler implements Runnable
         }
         catch (IOException e)
         {
-            System.err.println("ConnectionHandler: Problem encountered when getting streams from socket.");
+            System.err.println("CommunicationHandler: Problem encountered when getting streams from socket.");
         }
         printStream.printf(MESSAGE_TEMPLATE, "Please wait...");
 
@@ -69,8 +69,10 @@ public class ConnectionHandler implements Runnable
             printStream.print(READY);
             try
             {
-                userResponse = bufferedReader.readLine();
-                System.out.println(userResponse);
+                if((userResponse = bufferedReader.readLine())== null)
+                {
+                    throw new IOException("Client disconnected while reading.");
+                }
             }
             catch (IOException e)
             {

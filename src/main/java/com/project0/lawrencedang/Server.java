@@ -55,7 +55,7 @@ public class Server {
 
             System.out.println("Client connected");
             ThreadCommunicationChannel comm = new ThreadCommunicationChannel();
-            ConnectionHandler handler = new ConnectionHandler(socket, comm);
+            CommunicationHandler handler = new CommunicationHandler(socket, comm);
             handlerThread = new Thread(handler);
             handlerThread.start();
             gameThread = new Thread(new Game(comm, handlerThread));
