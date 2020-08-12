@@ -5,7 +5,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintStream;
 import java.net.Socket;
-import java.util.ArrayList;
+import java.util.List;
 
 import com.google.gson.Gson;
 
@@ -89,8 +89,8 @@ public class ConnectionHandler implements Runnable
 
     public static String generateStateString(GameState state)
     {
-        ArrayList<Card> dealerHand = state.getDealerHand();
-        ArrayList<Card> playerHand = state.getPlayerHand();
+        List<Card> dealerHand = state.getDealerHand();
+        List<Card> playerHand = state.getPlayerHand();
         Gson jsonSerializer = new Gson();
         return String.format(STATE_TEMPLATE, jsonSerializer.toJson(dealerHand), jsonSerializer.toJson(playerHand), 
         jsonSerializer.toJson(state.getPlayerState()), jsonSerializer.toJson(state.getEndState()));

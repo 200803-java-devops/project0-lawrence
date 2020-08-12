@@ -1,7 +1,8 @@
 package com.project0.lawrencedang;
 
 import java.io.IOException;
-import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 import java.util.Random;
 
 /**
@@ -133,8 +134,8 @@ public class Game implements Runnable
 
     private boolean isEarlyEnd()
     {
-        ArrayList<Card> playerHand = state.getPlayerHand();
-        ArrayList<Card> dealerHand = state.getDealerHand();
+        List<Card> playerHand = state.getPlayerHand();
+        List<Card> dealerHand = state.getDealerHand();
         if (bestHandValue(playerHand) >= 21 || bestHandValue(dealerHand) >= 21)
         {
             return true;
@@ -211,7 +212,7 @@ public class Game implements Runnable
         System.out.println(state.getPlayerState());
     }
 
-    private int bestHandValue(ArrayList<Card> cards)
+    private int bestHandValue(Collection<Card> cards)
     {
         return Card.highValueOf(cards) <= 21? Card.highValueOf(cards) : Card.lowValueOf(cards);
     }

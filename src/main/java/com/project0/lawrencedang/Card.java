@@ -1,6 +1,6 @@
 package com.project0.lawrencedang;
 
-import java.util.ArrayList;
+import java.util.Collection;
 
 public enum Card {
     None(0), Ace(1), Two(2), Three(3), Four(4), Five(5), Six(6), Seven(7), Eight(8), Nine(9), Ten(10), Jack(10), Queen(10), King(10);
@@ -17,7 +17,7 @@ public enum Card {
         return card == Ace? 1 : card.value;
     }
 
-    public static int lowValueOf(ArrayList<Card> cards)
+    public static int lowValueOf(Collection<Card> cards)
     {
         int total = 0;
         for(Card card: cards)
@@ -32,7 +32,7 @@ public enum Card {
         return card == Ace? 11 : card.value;
     }
 
-    public static int highValueOf(ArrayList<Card> cards)
+    public static int highValueOf(Collection<Card> cards)
     {
         int total = 0;
         for(Card card: cards)

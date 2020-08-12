@@ -3,7 +3,7 @@ package com.project0.lawrencedang;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.PrintStream;
-import java.util.ArrayList;
+import java.util.List;
 
 import com.google.gson.Gson;
 
@@ -99,15 +99,15 @@ public class Client {
     private void renderState()
     {
         String renderTemplate = "Dealer's cards: %s\tTotal: %d(%d)\nYour cards: %s\tTotal:%d(%d)\n";
-        ArrayList<Card> dealerHand = state.getDealerHand();
-        ArrayList<Card> playerHand = state.getPlayerHand();
+        List<Card> dealerHand = state.getDealerHand();
+        List<Card> playerHand = state.getPlayerHand();
         String output = String.format(renderTemplate, displayHand(dealerHand), Card.lowValueOf(dealerHand), Card.highValueOf(dealerHand),
         displayHand(playerHand), Card.lowValueOf(playerHand), Card.highValueOf(playerHand));
         System.out.println(output);
         System.out.println();
     }
 
-    private String displayHand(ArrayList<Card> cards)
+    private String displayHand(List<Card> cards)
     {
         String[] cardNames = new String[cards.size()];
         for(int i = 0; i<cards.size(); i++)
