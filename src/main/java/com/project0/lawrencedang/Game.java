@@ -29,7 +29,7 @@ public class Game implements Runnable
     public Game(int numPlayers, ThreadCommunicationChannel comm)
     {  
         this.commChannel = comm;
-        this.state = new GameState();
+        this.state = new GameState(numPlayers);
         this.deck = null;
         this.numPlayers = numPlayers;
     }
@@ -51,12 +51,14 @@ public class Game implements Runnable
             while((requestEntry = commChannel.takeRequest())==null);
             int playerId = requestEntry.getRequestorID();
             ClientRequest request = requestEntry.getClientRequest();
+            System.out.println("found request from player "+playerId);
             try
             {
                 switch(request)
                 {
                     case GET_STATE:
                         commChannel.putState(playerId, getStateView());
+                        System.out.println("Placed state");
                         break;
                     case DO_HIT:
                         if(!isPlayerDone(playerId))
@@ -83,6 +85,26 @@ public class Game implements Runnable
         }
         dealerTurn();
         resolveGame();
+        while(true)
+        {  
+            RequestEntry requestEntry;
+            while((requestEntry = commChannel.takeRequest())==null);
+            int playerId = requestEntry.getRequestorID();
+            ClientRequest request = requestEntry.getClientRequest();
+            System.out.println("found request from player "+playerId);
+            if(request == ClientRequest.GET_STATE)
+            {
+                try
+                {
+                    commChannel.putState(getStateView());
+                }
+                catch(InterruptedException e)
+                {
+                    System.err.println("Interrupted while handling client input");
+                    Thread.currentThread().interrupt();
+                }
+            }
+        }
 
         
     }
@@ -161,7 +183,7 @@ public class Game implements Runnable
             {
                 result = EndState.WIN;
             }
-            
+
             state.setEndState(i, result);
         }
     }
@@ -181,8 +203,6 @@ public class Game implements Runnable
         {
             state.setPlayerState(playerId, PlayerState.PLAYING); 
         }
-        System.out.println(playerHandVal);
-        System.out.println(state.getPlayerState());
     }
 
     private int bestHandValue(Collection<Card> cards)

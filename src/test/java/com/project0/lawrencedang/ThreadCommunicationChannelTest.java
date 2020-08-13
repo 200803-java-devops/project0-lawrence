@@ -1,5 +1,6 @@
 package com.project0.lawrencedang;
 
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import org.junit.Before;
@@ -10,11 +11,18 @@ public class ThreadCommunicationChannelTest {
 
     public class TakeStateLockHelper implements Runnable
     {
+        public int id;
+        public ThreadCommunicationChannel comm;
+        public TakeStateLockHelper(int id, ThreadCommunicationChannel comm)
+        {
+            this.id = id;
+            this.comm = comm;
+        }
         public void run()
         {
             try
             {
-                commChannel.takeState();
+                this.comm.takeState();
             }
             catch(InterruptedException e)
             {
@@ -32,10 +40,18 @@ public class ThreadCommunicationChannelTest {
     @Test
     public void takeStateLockTest() throws InterruptedException
     {
-        Thread helper = new Thread(new TakeStateLockHelper());
+        Thread helper = new Thread(new TakeStateLockHelper(0, commChannel));
         helper.start();
         Thread.sleep(1000);
         assertTrue(helper.isAlive());
+
+
+        ThreadCommunicationChannel comm2 = new ThreadCommunicationChannel();
+        Thread helper2 = new Thread(new TakeStateLockHelper(1, comm2));
+        helper2.start();
+        comm2.putState(new GameStateView(new GameState()));
+        Thread.sleep(1000);
+        assertFalse(helper2.isAlive());
     }
 
     @Test

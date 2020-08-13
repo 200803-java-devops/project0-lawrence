@@ -13,6 +13,7 @@ public class ThreadCommunicationChannel {
     private List<GameStateView> newState;
     private List<Boolean> hasFreshState;
     private List<Lock> lockList;
+    private List<Condition> notifiers;
     private Queue<RequestEntry> playerRequest;
     private int numPlayers;
 
@@ -21,6 +22,7 @@ public class ThreadCommunicationChannel {
         hasFreshState = Collections.synchronizedList(new ArrayList<>(1));
         newState = Collections.synchronizedList(new ArrayList<>(1));
         lockList = new ArrayList<>(1);
+        notifiers = new ArrayList<>(1);
         playerRequest = new ConcurrentLinkedQueue<>();
         numPlayers = 1;
         initializeLists();
@@ -30,6 +32,7 @@ public class ThreadCommunicationChannel {
         hasFreshState = Collections.synchronizedList(new ArrayList<>(numPlayers));
         newState = Collections.synchronizedList(new ArrayList<>(numPlayers));
         lockList = new ArrayList<>(numPlayers);
+        notifiers = new ArrayList<>(numPlayers);
         playerRequest = new ConcurrentLinkedQueue<>();
         this.numPlayers = numPlayers;
         initializeLists();
@@ -52,6 +55,11 @@ public class ThreadCommunicationChannel {
         {
             lockList.add(new ReentrantLock());
         }
+
+        for(int i =0; i<numPlayers; i++)
+        {
+            notifiers.add(lockList.get(i).newCondition());
+        }
     }
 
     public GameStateView takeState() throws InterruptedException
@@ -64,7 +72,7 @@ public class ThreadCommunicationChannel {
         GameStateView state = null;
         Lock lock = lockList.get(playerId);
         lock.lockInterruptibly();
-        Condition waiter = lock.newCondition();
+        Condition waiter = notifiers.get(playerId);
         try
         {
             while(hasFreshState.get(playerId) == false)
@@ -92,7 +100,7 @@ public class ThreadCommunicationChannel {
 
         Lock lock = lockList.get(playerId);
         lock.lockInterruptibly();
-        Condition notifier = lock.newCondition();
+        Condition notifier = notifiers.get(playerId);
         try
         {
             newState.set(playerId, state);
@@ -101,7 +109,7 @@ public class ThreadCommunicationChannel {
         finally
         {
             notifier.signalAll();
-            lockList.get(playerId).unlock();
+            lock.unlock();
         }
     }
 
