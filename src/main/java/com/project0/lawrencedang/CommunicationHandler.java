@@ -2,10 +2,7 @@ package com.project0.lawrencedang;
 
 import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.io.PrintStream;
-import java.net.Socket;
-import java.util.List;
 
 import com.google.gson.Gson;
 
@@ -19,25 +16,37 @@ import com.google.gson.Gson;
 public class CommunicationHandler implements Runnable
 {
     public static final String MESSAGE_TEMPLATE = "MSG|%s\n";
-    public static final String STATE_TEMPLATE = "STATE|DEALER_HAND:%s/PLAYER_HAND:%s/PLAYER_STATE:%s/END_STATE:%s\n";
+    public static final String STATE_TEMPLATE = "STATE|%s\n";
     public static final String READY = "READY|\n";
+    public static final String RECEIVED = "RECEIVED\n";
+    public static final String REJECT = "REJECTED|\n";
 
-    private Socket mySocket;
+    private BufferedReader bufferedReader;
+    private PrintStream printStream;
     private ThreadCommunicationChannel commChannel;
+    private int playerId;
     /**
      * Creates a new CommunicationHandler for the supplied socket.
      * Communicates with the game logic via the ThreadCommunicationChannel.
      * @param socket The socket connected to the client.
      * @param comm The ThreadCommunicationChannel shared with the game logic.
      */
-    public CommunicationHandler(Socket socket, ThreadCommunicationChannel comm)
+    
+    public CommunicationHandler(BufferedReader reader, PrintStream printer, int id, ThreadCommunicationChannel comm)
     {
-        if (socket == null || comm == null)
+        if (reader == null || printer == null || comm == null)
         {
             throw new NullPointerException("Arguments to CommunicationHandler cannot be null.");
         }
-        this.mySocket = socket;
+        this.bufferedReader = reader;
+        this.printStream = printer;
         this.commChannel = comm;
+        this.playerId = id;
+    }
+
+    public void greet()
+    {
+        printStream.printf(MESSAGE_TEMPLATE, "Please wait...");
     }
     /**
      * Runs the logic to communicate with the client.
@@ -47,30 +56,18 @@ public class CommunicationHandler implements Runnable
      */
     public void run()
     {
-        BufferedReader bufferedReader = null;
-        PrintStream printStream = null;
         String userResponse = null;
-        GameState state = null;
-        try
-        {
-            bufferedReader = new BufferedReader(new InputStreamReader(mySocket.getInputStream()));
-            printStream = new PrintStream(mySocket.getOutputStream());
-        }
-        catch (IOException e)
-        {
-            System.err.println("CommunicationHandler: Problem encountered when getting streams from socket.");
-        }
-        printStream.printf(MESSAGE_TEMPLATE, "Please wait...");
+        GameStateView state = null;
+        
 
         while(true)
         {
-            state = getState();
-            printStream.print(generateStateString(state));
             printStream.print(READY);
             try
             {
                 if((userResponse = bufferedReader.readLine())== null)
                 {
+                    System.out.println(userResponse);
                     throw new IOException("Client disconnected while reading.");
                 }
             }
@@ -79,22 +76,40 @@ public class CommunicationHandler implements Runnable
                 System.out.println("Error when communicating with client.");
                 return;
             }
-            commChannel.putOption(Integer.parseInt(userResponse));
+            userResponse = userResponse.trim();
+            ClientRequest request = ClientRequest.fromString(userResponse);
+            String serverResponse = "";
+            switch(request)
+            {
+                case GET_STATE:
+                    try
+                    {
+                        commChannel.putRequest(this.playerId, request);
+                        state = commChannel.takeState(this.playerId);
+                        serverResponse = generateStateString(state);
+                    }
+                    catch(InterruptedException e)
+                    {
+                        System.err.println("Interrupted while handling client input");
+                        Thread.currentThread().interrupt();
+                    }
+                    break;
+                case INVALID:
+                    serverResponse = REJECT;
+                    break;
+                default:
+                    commChannel.putRequest(this.playerId, request);
+                    serverResponse = RECEIVED;
+                    break;
+            }
+            printStream.print(serverResponse);
         }
     }
 
 
-    private GameState getState()
+    public static String generateStateString(GameStateView state)
     {
-        return commChannel.takeState();
-    }
-
-    public static String generateStateString(GameState state)
-    {
-        List<Card> dealerHand = state.getDealerHand();
-        List<Card> playerHand = state.getPlayerHand();
         Gson jsonSerializer = new Gson();
-        return String.format(STATE_TEMPLATE, jsonSerializer.toJson(dealerHand), jsonSerializer.toJson(playerHand), 
-        jsonSerializer.toJson(state.getPlayerState()), jsonSerializer.toJson(state.getEndState()));
+        return String.format(STATE_TEMPLATE, jsonSerializer.toJson(state));
     }
 }

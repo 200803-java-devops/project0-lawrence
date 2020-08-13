@@ -1,8 +1,15 @@
 package com.project0.lawrencedang;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.PrintStream;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 /**
  * Server is a class that acts as the server for the multiplayer blackjack game.
@@ -13,8 +20,9 @@ public class Server {
     public static final int MAX_CONNECTIONS= 4;
 
     private ServerSocket server;
-    private Thread gameThread;
-    private Thread handlerThread;
+    private ExecutorService gameThreadPool;
+    private ExecutorService handlerThreadPool;
+
 
 
     /**
@@ -27,7 +35,8 @@ public class Server {
         try 
         {
             server = new ServerSocket(port);
-            gameThread = null;
+            gameThreadPool = Executors.newFixedThreadPool(2);
+            handlerThreadPool = Executors.newFixedThreadPool(MAX_CONNECTIONS);
         }
         catch(IOException e)
         {
@@ -42,30 +51,36 @@ public class Server {
     public void listen()
     {
         Socket socket = null;
-        while(true)
+        int connections = 0;
+        ThreadCommunicationChannel comm = new ThreadCommunicationChannel();
+        List<CommunicationHandler> connectionList  = new ArrayList<CommunicationHandler>();
+        while(connections < MAX_CONNECTIONS)
         {
+            BufferedReader reader;
+            PrintStream writer;
             try
             {
                 socket = server.accept();
+                reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+                writer = new PrintStream(socket.getOutputStream());
             }
             catch (IOException e)
             {
                 System.err.println("Problem while listening for connections.");
+                return;
             }
 
             System.out.println("Client connected");
-            ThreadCommunicationChannel comm = new ThreadCommunicationChannel();
-            CommunicationHandler handler = new CommunicationHandler(socket, comm);
-            handlerThread = new Thread(handler);
-            handlerThread.start();
-            gameThread = new Thread(new Game(comm, handlerThread));
-            gameThread.start();
-            /*if(connections == MAX_CONNECTIONS)
-            {
-                runGame();
-            }*/
+            CommunicationHandler handler = new CommunicationHandler(reader, writer, connections, comm);
+            handler.greet();
+            connectionList.add(handler);
+            connections++;
+        }
 
-            break; // For testing single player
+        gameThreadPool.execute(new Game(connections, comm));
+        for(CommunicationHandler h: connectionList)
+        {
+            handlerThreadPool.execute(h);
         }
     }
 

@@ -1,9 +1,8 @@
 package com.project0.lawrencedang;
 
-import java.io.IOException;
 import java.util.Collection;
-import java.util.List;
 import java.util.Random;
+
 
 /**
  * Game is a class that implements the game logic for Blackjack. It is intended to be run from a thread.
@@ -16,9 +15,9 @@ public class Game implements Runnable
     public static final String END_STATE_STRING_FORMAT = "END %s";
 
     private GameState state;
-    private Thread commThread;
     private ThreadCommunicationChannel commChannel;
     private Deck deck;
+    private int numPlayers;
     /**
      * Creates a new Game object with the specified ThreadCommunicationChannel,
      * which should be shared to the CommunicationHandler run by commThread.
@@ -27,12 +26,12 @@ public class Game implements Runnable
      * @param comm The shared ThreadCommunicationChannel between the Game and the ConnectionHandler.
      * @param commThread The thread running the ConnectionHandler.
      */
-    public Game(ThreadCommunicationChannel comm,Thread commThread)
+    public Game(int numPlayers, ThreadCommunicationChannel comm)
     {  
         this.commChannel = comm;
-        this.commThread = commThread;
         this.state = new GameState();
         this.deck = null;
+        this.numPlayers = numPlayers;
     }
 
     /**
@@ -46,75 +45,51 @@ public class Game implements Runnable
     private void runGame()
     {
         dealFirstCards();
-        try
+        while(!allPlayersStopped())
         {
-            if(!isEarlyEnd())
+            RequestEntry requestEntry;
+            while((requestEntry = commChannel.takeRequest())==null);
+            int playerId = requestEntry.getRequestorID();
+            ClientRequest request = requestEntry.getClientRequest();
+            try
             {
-                sendStateToPlayer();
-                handlePlayerOptions();
-                if(state.getPlayerState() != PlayerState.BUST)
+                switch(request)
                 {
-                    dealerTurn();
+                    case GET_STATE:
+                        commChannel.putState(playerId, getStateView());
+                        break;
+                    case DO_HIT:
+                        if(!isPlayerDone(playerId))
+                        {
+                            hitPlayer(playerId);
+                        }
+                        break;
+                    case DO_STAND:
+                        if(!isPlayerDone(playerId))
+                        {
+                            standPlayer(playerId);
+                        }
+                        break;
+                    default:
+                        System.out.println("This request isn't supported yet.");
+                        break;
                 }
-                
             }
-            resolveGame();
-            sendStateToPlayer();
+            catch(InterruptedException e)
+            {
+                System.err.println("Interrupted while handling client request.");
+                Thread.currentThread().interrupt();
+            }
         }
-        catch (IOException e)
-        {
-            System.out.println("Client handler thread died. Terminating game thread.");
-            return;
-        }
+        dealerTurn();
+        resolveGame();
+
         
     }
 
-    private void handlePlayerOptions() throws IOException
+    private GameStateView getStateView()
     {
-        PlayerState playerState = state.getPlayerState();
-        while(playerState == PlayerState.PLAYING)
-        {
-            int option = readPlayerInput();
-            switch(option)
-            {
-                case 1:
-                    hitPlayer();
-                    break;
-                case 2:
-                    standPlayer();
-                    break;
-            }
-            playerState = state.getPlayerState();
-            if(playerState == PlayerState.PLAYING)
-            {
-                sendStateToPlayer();
-            }
-        }
-    } 
-
-    private void sendStateToPlayer() throws IOException
-    {
-        if(commThread.isAlive())
-        {
-            commChannel.putState(state);
-        }
-        else
-        {
-            throw new IOException("Client handler thread died.");
-        }
-    }
-
-    private int readPlayerInput() throws IOException
-    {
-        if(commThread.isAlive())
-        {
-            int option = commChannel.takeOption();
-            return option;
-        }
-        else
-        {
-            throw new IOException("Client handler thread died.");
-        }
+        return new GameStateView(this.state);
     }
 
     private Card dealCard()
@@ -127,31 +102,23 @@ public class Game implements Runnable
         this.deck = new Deck(4, new Random());
         this.deck.shuffle();
         state.addDealerHand(dealCard()); 
-        state.addDealerHand(dealCard());
-        state.addPlayerHand(dealCard());
-        state.addPlayerHand(dealCard());
-    }
-
-    private boolean isEarlyEnd()
-    {
-        List<Card> playerHand = state.getPlayerHand();
-        List<Card> dealerHand = state.getDealerHand();
-        if (bestHandValue(playerHand) >= 21 || bestHandValue(dealerHand) >= 21)
+        state.addHiddenDealerHand(dealCard());
+        for(int i =0; i< numPlayers; i++)
         {
-            return true;
+            this.state.addPlayerHand(i, dealCard());
+            this.state.addPlayerHand(i, dealCard());
         }
-        return false;
     }
 
-    private void hitPlayer()
+    private void hitPlayer(int playerId)
     {
-        state.addPlayerHand(dealCard());
-        updatePlayerStateAfterHit();
+        state.addPlayerHand(playerId, dealCard());
+        updatePlayerStateAfterHit(playerId);
     }
 
-    private void standPlayer()
+    private void standPlayer(int playerId)
     {
-        state.setPlayerState(PlayerState.STAND);
+        state.setPlayerState(playerId, PlayerState.STAND);
     }
 
     private void dealerTurn()
@@ -164,49 +131,55 @@ public class Game implements Runnable
 
     private void resolveGame()
     {
-        int playerHandVal =  bestHandValue(state.getPlayerHand());
-        int dealerHandVal =  bestHandValue(state.getDealerHand());
         System.out.println("Resolving game");
-        if (state.getPlayerState() == PlayerState.BUST)
+        int dealerHandVal = bestHandValue(state.getDealerHand());
+        for(int i = 0; i<numPlayers; i++)
         {
-            state.setEndState(EndState.LOSE);     
-        }
-        else if (playerHandVal == dealerHandVal)
-        {
-            state.setEndState(EndState.TIE);
-        }
-        else if (playerHandVal == 21 && dealerHandVal != 21)
-        {
-            state.setEndState(EndState.BLACKJACK);
-        }
-        else if (dealerHandVal > 21)
-        {
-            state.setEndState(EndState.WIN);
-        }
-        else if (playerHandVal < dealerHandVal)
-        {
-            state.setEndState(EndState.LOSE);
-        }
-        else // playerTotal > dealerTotal AND less than 21
-        {
-            state.setEndState(EndState.WIN);   
+            int playerHandVal = bestHandValue(state.getPlayerHand(i));
+            EndState result;
+            if (state.getPlayerState(i) == PlayerState.BUST)
+            {
+                result = EndState.LOSE;  
+            }
+            else if (playerHandVal == dealerHandVal)
+            {
+                result = EndState.TIE;
+            }
+            else if (playerHandVal == 21 && dealerHandVal != 21)
+            {
+                result = EndState.BLACKJACK;
+            }
+            else if (dealerHandVal > 21)
+            {
+                result = EndState.WIN;
+            }
+            else if (playerHandVal < dealerHandVal)
+            {
+                result = EndState.LOSE;
+            }
+            else // playerTotal > dealerTotal AND less than 21
+            {
+                result = EndState.WIN;
+            }
+            
+            state.setEndState(i, result);
         }
     }
 
-    private void updatePlayerStateAfterHit()
+    private void updatePlayerStateAfterHit(int playerId)
     {
         int playerHandVal = bestHandValue(state.getPlayerHand());
         if(playerHandVal>21)
         {
-            state.setPlayerState(PlayerState.BUST);
+            state.setPlayerState(playerId, PlayerState.BUST);
         }
         else if (playerHandVal == 21)
         {
-            state.setPlayerState(PlayerState.STAND); 
+            state.setPlayerState(playerId, PlayerState.STAND); 
         }
         else
         {
-            state.setPlayerState(PlayerState.PLAYING); 
+            state.setPlayerState(playerId, PlayerState.PLAYING); 
         }
         System.out.println(playerHandVal);
         System.out.println(state.getPlayerState());
@@ -217,4 +190,23 @@ public class Game implements Runnable
         return Card.highValueOf(cards) <= 21? Card.highValueOf(cards) : Card.lowValueOf(cards);
     }
     
+    private boolean isPlayerDone(int player)
+    {
+        return state.getPlayerState() != PlayerState.PLAYING;
+    }
+
+    private boolean allPlayersStopped()
+    {
+        boolean anyActive = false;
+        for(int i=0; i<numPlayers; i++)
+        {
+            if(state.getPlayerState() == PlayerState.PLAYING)
+            {
+                anyActive = true;
+                break;
+            }
+        }
+        return !anyActive;
+
+    }
 }

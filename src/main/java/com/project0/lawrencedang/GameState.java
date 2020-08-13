@@ -46,6 +46,16 @@ public class GameState {
         return playerHands[player].getVisibleCards();
     }
 
+    public List[] getPlayerHands()
+    {
+        List[] output = new List[playerHands.length];
+        for(int i=0; i< playerHands.length; i++)
+        {
+            output[i] = playerHands[i].getVisibleCards();
+        }
+        return output;
+    }
+
     public PlayerState getPlayerState()
     {
         return playerStates[0];
@@ -56,6 +66,11 @@ public class GameState {
         return playerStates[player];
     }
 
+    public PlayerState[] getPlayerStates()
+    {
+        return playerStates.clone();
+    }
+
     public EndState getEndState()
     {
         return endStates[0];
@@ -64,6 +79,11 @@ public class GameState {
     public EndState getEndState(int player)
     {
         return endStates[player];
+    }
+
+    public EndState[] getEndStates()
+    {
+        return endStates.clone();
     }
 
     public void addDealerHand(Card card)
