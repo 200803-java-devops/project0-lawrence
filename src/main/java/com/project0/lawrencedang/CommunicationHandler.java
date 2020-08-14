@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.io.PrintStream;
 
 import com.google.gson.Gson;
+import static com.project0.lawrencedang.ClientServerProtocol.*;
 
 /**
  * A CommunicationHandler serves as the bridge between the client and the game logic.
@@ -15,12 +16,6 @@ import com.google.gson.Gson;
  */
 public class CommunicationHandler implements Runnable
 {
-    public static final String MESSAGE_TEMPLATE = "MSG|%s\n";
-    public static final String STATE_TEMPLATE = "STATE|%s\n";
-    public static final String READY = "READY|\n";
-    public static final String RECEIVED = "RECEIVED\n";
-    public static final String REJECT = "REJECTED|\n";
-
     private BufferedReader bufferedReader;
     private PrintStream printStream;
     private ThreadCommunicationChannel commChannel;
