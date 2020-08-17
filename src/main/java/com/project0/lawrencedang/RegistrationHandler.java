@@ -3,6 +3,8 @@ package com.project0.lawrencedang;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.PrintStream;
+import java.sql.SQLException;
+
 import static com.project0.lawrencedang.ClientServerProtocol.MESSAGE_TEMPLATE;
 
 public class RegistrationHandler extends LoginServerHandler {
@@ -33,14 +35,28 @@ public class RegistrationHandler extends LoginServerHandler {
                 }
             }
             
-            registered = userDao.isRegistered(username.getString());
+            try
+            {
+                registered = userDao.isRegistered(username.getString());
+            }
+            catch(SQLException e)
+            {
+                System.err.println("Problem checking if username is registered");
+            }
             if(registered)
             {
                 writer.print(String.format(MESSAGE_TEMPLATE, "Username already exists"));
             }
             else
             {
-                userDao.put(username.getString());
+                try
+                {
+                    userDao.put(username.getString());
+                }
+                catch(SQLException e)
+                {
+                    System.err.println("Failed to register new user.");
+                }
             }
         }
 

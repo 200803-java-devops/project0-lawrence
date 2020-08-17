@@ -44,7 +44,7 @@ public class LoginServer extends Server {
             {
                 System.err.println("Problem while reading username");
             }
-            LoginOptions option = LoginOptions.fromString(uResponse)
+            LoginOptions option = LoginOptions.fromString(uResponse);
             if( option != LoginOptions.INVALID)
             {
                 switch(option)
@@ -73,16 +73,18 @@ public class LoginServer extends Server {
 
     private void login(BufferedReader reader, PrintStream writer)
     {
-        
+        LoginHandler handler = new LoginHandler(reader, writer);
+        handler.run();
     }
 
     private void register(BufferedReader reader, PrintStream writer)
     {
-
+        RegistrationHandler handler = new RegistrationHandler(reader, writer);
+        handler.run();
     }
 
     private void sendLeaderboard(BufferedReader reader, PrintStream writer)
     {
-
+        return;
     }
 }
