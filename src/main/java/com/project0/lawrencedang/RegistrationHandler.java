@@ -6,6 +6,8 @@ import java.io.PrintStream;
 import java.sql.SQLException;
 
 import static com.project0.lawrencedang.ClientServerProtocol.MESSAGE_TEMPLATE;
+import static com.project0.lawrencedang.ClientServerProtocol.RECEIVED;
+import static com.project0.lawrencedang.ClientServerProtocol.REJECT;
 
 public class RegistrationHandler extends LoginServerHandler {
     UserRepository userDao;
@@ -20,19 +22,17 @@ public class RegistrationHandler extends LoginServerHandler {
     {
         Username username = new Username();
         boolean registered = true;
-        while(registered = true)
+        while(registered == true)
         {
-            while(!username.isValidUsername())
+
+            try
             {
-                try
-                {
-                    username = getUsername();
-                }
-                catch(IOException e)
-                {
-                    System.err.println("Problem while getting username from client");
-                    return;
-                }
+                username = getUsername();
+            }
+            catch(IOException e)
+            {
+                System.err.println("Problem while getting username from client");
+                return;
             }
             
             try
@@ -45,13 +45,17 @@ public class RegistrationHandler extends LoginServerHandler {
             }
             if(registered)
             {
-                writer.print(String.format(MESSAGE_TEMPLATE, "Username already exists"));
+                System.out.println("Client tried to register a registered name");
+                writer.print(REJECT);
             }
             else
             {
                 try
                 {
                     userDao.put(username.getString());
+                    System.out.println("Created new user " + username.getString());
+                    writer.print(RECEIVED);
+                    return;
                 }
                 catch(SQLException e)
                 {

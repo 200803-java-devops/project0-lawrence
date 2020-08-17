@@ -4,6 +4,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.PrintStream;
 import static com.project0.lawrencedang.ClientServerProtocol.READY;
+import static com.project0.lawrencedang.ClientServerProtocol.REJECT;
 
 public abstract class LoginServerHandler implements Runnable {
     protected BufferedReader reader;
@@ -20,8 +21,19 @@ public abstract class LoginServerHandler implements Runnable {
         while(!username.isValidUsername())
         {
             writer.print(READY);
-            username = new Username(reader.readLine());
+            String name = reader.readLine();
+            if(name == null)
+            {
+                throw new IOException();
+            }
+            username = new Username(name);
+            if(!username.isValidUsername())
+            {
+                System.err.println("Username " + username.getString() +" invalid");
+                writer.print(REJECT);
+            }
         }
+        System.out.println("got username");
         return username;
     }
     

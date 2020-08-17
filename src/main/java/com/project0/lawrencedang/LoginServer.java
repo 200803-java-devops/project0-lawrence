@@ -22,11 +22,14 @@ public class LoginServer extends Server {
         {
             BufferedReader reader = null;
             PrintStream writer = null;
+            Socket socket = null;
             try
             {
-                Socket socket = server.accept();
+                System.out.println("Waiting for connection");
+                socket = server.accept();
                 reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
                 writer = new PrintStream(socket.getOutputStream());
+                System.out.println("Client connected");
             }
             catch(IOException e)
             {
@@ -42,7 +45,7 @@ public class LoginServer extends Server {
             }
             catch(IOException e)
             {
-                System.err.println("Problem while reading username");
+                System.err.println("Problem while reading user choice");
             }
             LoginOptions option = LoginOptions.fromString(uResponse);
             if( option != LoginOptions.INVALID)
@@ -50,9 +53,11 @@ public class LoginServer extends Server {
                 switch(option)
                 {
                     case LOGIN:
+                        System.out.println("Client chose to login");
                         login(reader, writer);
                         break;
                     case REGISTER:
+                        System.out.println("Client chose to register");
                         register(reader, writer);
                         break;
                     case LEADERBOARD:
@@ -67,7 +72,14 @@ public class LoginServer extends Server {
             {
                 writer.print(REJECT);
             }
-            
+            try
+            {
+                socket.close(); 
+            }
+            catch(IOException e)
+            {
+                System.err.println("Problem closing socket");
+            }
         }
     }
 
@@ -86,5 +98,17 @@ public class LoginServer extends Server {
     private void sendLeaderboard(BufferedReader reader, PrintStream writer)
     {
         return;
+    }
+
+    public static void main(String[] args) {
+        try(ServerSocket serverSock = new ServerSocket(3465))
+        {
+            LoginServer server = new LoginServer(serverSock);
+            server.listen();
+        }
+        catch(IOException e)
+        {
+            System.err.println("Problem while starting server.");
+        }
     }
 }

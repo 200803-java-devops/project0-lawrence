@@ -7,10 +7,10 @@ import java.sql.SQLException;
 
 import static com.project0.lawrencedang.ClientServerProtocol.READY;
 import static com.project0.lawrencedang.ClientServerProtocol.REJECT;
+import static com.project0.lawrencedang.ClientServerProtocol.TOKEN_TEMPLATE;
 import static com.project0.lawrencedang.ClientServerProtocol.MESSAGE_TEMPLATE;
 
 public class LoginHandler extends LoginServerHandler {
-    public static final String tokenTemplate = "TOKEN|%s\n";
     public final int tokenLength = 20;
     TokenRepository tokenDao;
     UserRepository userDao;
@@ -37,6 +37,7 @@ public class LoginHandler extends LoginServerHandler {
                 System.err.println("Problem while getting username from client");
                 return;
             }
+
             try
             {
                 registered = userDao.isRegistered(username.getString());
@@ -46,16 +47,18 @@ public class LoginHandler extends LoginServerHandler {
                 System.err.println("Problem while checking username");
                 return;
             }
+
             if(!registered)
             {
-                writer.print(String.format(MESSAGE_TEMPLATE, "Username not found"));
+                System.out.println("User entered a non-registered name");
+                writer.print(REJECT);
             }
             else
             {
                 User user = null;
                 try
                 {
-                    user = userDao.get(username.getString());
+                    user = userDao.getByName(username.getString());
                 }
                 catch(SQLException e)
                 {
@@ -65,7 +68,8 @@ public class LoginHandler extends LoginServerHandler {
                 
                 String token = generateTokenString();
                 putToken(user.getUserId(), token);
-                writer.print(String.format(tokenTemplate, token));
+                writer.print(String.format(TOKEN_TEMPLATE, token));
+                System.out.println("Generated new token " + token);
             }
         }
         while(!registered);
