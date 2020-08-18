@@ -23,7 +23,7 @@ import static com.project0.lawrencedang.ClientServerProtocol.REJECT;
  * and one thread to handle the game logic.
  */
 public class GameServer extends Server {
-    public static final int MAX_CONNECTIONS= 1;
+    public static final int MAX_CONNECTIONS= 2;
 
     private ExecutorService gameThreadPool;
     private ExecutorService handlerThreadPool;
@@ -50,7 +50,7 @@ public class GameServer extends Server {
     {
         Socket socket = null;
         int connections = 0;
-        ThreadCommunicationChannel comm = new ThreadCommunicationChannel();
+        ThreadCommunicationChannel comm = new ThreadCommunicationChannel(MAX_CONNECTIONS);
         List<CommunicationHandler> connectionList  = new ArrayList<CommunicationHandler>();
         while(connections < MAX_CONNECTIONS)
         {

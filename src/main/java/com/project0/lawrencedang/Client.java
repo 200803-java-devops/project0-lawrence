@@ -32,6 +32,7 @@ public class Client {
         ClientServerProtocol.waitForReady(reader);
         writer.println("GET_STATE");
         processStateMessage();
+        renderState();
         while(turnEnd == false)
         {
             String uOption = promptUserInput();
@@ -55,13 +56,39 @@ public class Client {
                 writer.println("GET_STATE");
             }
             processStateMessage();
-            if(checkGameEnded())
+            renderState();
+            if(checkTurnEnded())
             {
+                if(state.playerStates[id] == PlayerState.BUST)
+                {
+                    System.out.println("Bust!");
+                }
+                System.out.println("Please wait for the other players to finish.");
                 turnEnd = true;
             }
         }
+        waitForEnd();
         printEndMessage();
+        renderState();
         writer.println("DISCONNECT");
+    }
+
+    private void waitForEnd() throws IOException
+    {
+        while(state.endStates[id] == EndState.NA)
+        {
+            ClientServerProtocol.waitForReady(reader);
+            writer.println("GET_STATE");
+            processStateMessage();
+            try
+            {
+                Thread.sleep(2000);
+            }
+            catch(InterruptedException e)
+            {
+                Thread.currentThread().interrupt();
+            }
+        }
     }
 
     private boolean expectReceived() throws IOException
@@ -97,7 +124,6 @@ public class Client {
         if(type.equals("STATE"))
         {
             updateState(message);
-            renderState();
         }
         else
         {
@@ -166,9 +192,9 @@ public class Client {
         return String.join(", ", cardNames);
     }
 
-    private boolean checkGameEnded()
+    private boolean checkTurnEnded()
     {
-        return state.endStates[id] != EndState.NA;
+        return state.playerStates[id] != PlayerState.PLAYING;
     }
 
     private void printEndMessage()

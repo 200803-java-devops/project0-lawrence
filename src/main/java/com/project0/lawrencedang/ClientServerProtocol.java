@@ -36,9 +36,7 @@ public class ClientServerProtocol {
      * Used to indicate to the client that the game has begun
      */
     public static final String BEGIN_TEMPLATE = "BEGIN|%d\n";
-    /**
-     * Used to indicate to the client that the game has finished
-     */
+
 
     public static void waitForReady(BufferedReader reader) throws IOException
     {

@@ -23,7 +23,7 @@ public class GameStateView
         playerStates = state.getPlayerStates();
         endStates = state.getEndStates();
         int numPlayers = endStates.length;
-        dealerHand = new Card[numPlayers];
+        dealerHand = new Card[state.getDealerHand().size()];
         dealerHand = state.getDealerHand().toArray(dealerHand);
         List[] hands = state.getPlayerHands();
         playerHands = new Card[numPlayers][];

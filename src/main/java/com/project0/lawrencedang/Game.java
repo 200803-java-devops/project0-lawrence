@@ -44,11 +44,18 @@ public class Game implements Runnable
 
     private void runGame()
     {
+        boolean gameEnded = false;
         dealFirstCards();
-        while(!allPlayersStopped())
+        while(true)
         {
             RequestEntry requestEntry;
-            while((requestEntry = commChannel.takeRequest())==null);
+            while((requestEntry = commChannel.takeRequest())==null)
+            {
+                if(Thread.interrupted())
+                {
+                    return;
+                }
+            }
             int playerId = requestEntry.getRequestorID();
             ClientRequest request = requestEntry.getClientRequest();
             System.out.println("found request from player "+playerId);
@@ -76,6 +83,13 @@ public class Game implements Runnable
                         System.out.println("This request isn't supported yet.");
                         break;
                 }
+                if(allPlayersStopped() && !gameEnded)
+                {
+                    gameEnded = true;
+                    dealerTurn();
+                    resolveGame();
+                    System.out.println("Game ended");
+                }
             }
             catch(InterruptedException e)
             {
@@ -83,36 +97,6 @@ public class Game implements Runnable
                 Thread.currentThread().interrupt();
             }
         }
-        dealerTurn();
-        resolveGame();
-        System.out.println("Game ended");
-        while(true)
-        {  
-            RequestEntry requestEntry;
-            while((requestEntry = commChannel.takeRequest())==null)
-            {
-                if(Thread.interrupted())
-                {
-                    return;
-                }
-            }
-            int playerId = requestEntry.getRequestorID();
-            ClientRequest request = requestEntry.getClientRequest();
-            System.out.println("found request from player "+playerId);
-            if(request == ClientRequest.GET_STATE)
-            {
-                try
-                {
-                    commChannel.putState(getStateView());
-                }
-                catch(InterruptedException e)
-                {
-                    System.err.println("Interrupted while handling client input");
-                    Thread.currentThread().interrupt();
-                }
-            }
-        }
-
         
     }
 
@@ -197,7 +181,7 @@ public class Game implements Runnable
 
     private void updatePlayerStateAfterHit(int playerId)
     {
-        int playerHandVal = bestHandValue(state.getPlayerHand());
+        int playerHandVal = bestHandValue(state.getPlayerHand(playerId));
         if(playerHandVal>21)
         {
             state.setPlayerState(playerId, PlayerState.BUST);
@@ -219,7 +203,7 @@ public class Game implements Runnable
     
     private boolean isPlayerDone(int player)
     {
-        return state.getPlayerState() != PlayerState.PLAYING;
+        return state.getPlayerState(player) != PlayerState.PLAYING;
     }
 
     private boolean allPlayersStopped()
@@ -227,7 +211,7 @@ public class Game implements Runnable
         boolean anyActive = false;
         for(int i=0; i<numPlayers; i++)
         {
-            if(state.getPlayerState() == PlayerState.PLAYING)
+            if(state.getPlayerState(i) == PlayerState.PLAYING)
             {
                 anyActive = true;
                 break;
