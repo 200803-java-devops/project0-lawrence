@@ -85,10 +85,17 @@ public class Game implements Runnable
         }
         dealerTurn();
         resolveGame();
+        System.out.println("Game ended");
         while(true)
         {  
             RequestEntry requestEntry;
-            while((requestEntry = commChannel.takeRequest())==null);
+            while((requestEntry = commChannel.takeRequest())==null)
+            {
+                if(Thread.interrupted())
+                {
+                    return;
+                }
+            }
             int playerId = requestEntry.getRequestorID();
             ClientRequest request = requestEntry.getClientRequest();
             System.out.println("found request from player "+playerId);

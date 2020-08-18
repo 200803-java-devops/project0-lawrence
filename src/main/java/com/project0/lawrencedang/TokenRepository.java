@@ -69,4 +69,18 @@ public class TokenRepository extends DAO<Token> {
         return token != null;
     }
 
+    public boolean consumeToken(String tokenString) throws SQLException
+    {
+        Token token = get(tokenString);
+        if (token != null)
+        {
+            delete(token);
+            return true;
+        }
+        else
+        {
+            return false;
+        }
+    }
+
 }

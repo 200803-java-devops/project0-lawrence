@@ -1,14 +1,13 @@
 package com.project0.lawrencedang;
 
+import static com.project0.lawrencedang.ClientServerProtocol.waitForReady;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintStream;
 import java.net.InetSocketAddress;
 import java.net.Socket;
-import java.net.SocketException;
-
-import static com.project0.lawrencedang.ClientServerProtocol.waitForReady;
 
 
 /**
@@ -31,8 +30,18 @@ public class ClientApp {
         return tempSocket;
     }
 
-    private static void joinGame(BufferedReader reader, PrintStream writer, BufferedReader uinput) throws IOException
+    private static void joinGame(BufferedReader reader, PrintStream writer, BufferedReader uinput, String token) throws IOException
     {
+        //verify login
+        waitForReady(reader);
+        writer.println(token);
+        String response = reader.readLine();
+        if(!ClientServerProtocol.getType(response).equals("RECEIVED"))
+        {
+            System.err.println("Token was not accepted.");
+            return;
+        }
+
         System.out.println("Joining game");
         Client client = new Client(reader, writer, uinput);
         client.run();
@@ -141,11 +150,12 @@ public class ClientApp {
             System.exit(1);
         }
 
+        // Login Options
+        String loginToken = "";
         try
         {
             System.out.println("Please enter an option\n1: Login\n2: Register");
             String uinput = "";
-            String loginToken;
             while((uinput = userReader.readLine())!= null)
             {
                 if(uinput.equals("1"))
@@ -200,22 +210,12 @@ public class ClientApp {
         }
         System.out.println("Connected to server");
 
-        try
-        {
-            socket.setSoTimeout(20000);
-        }
-        catch(SocketException e)
-        {
-            System.err.println("Problem when setting socket timeout.");
-            System.exit(1);
-        }
-
+        // Show login token to GameServer
         try
         {
             reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
             writer = new PrintStream(socket.getOutputStream());
             userReader = new BufferedReader(new InputStreamReader(System.in));
-
         }
         catch(IOException e)
         {
@@ -225,7 +225,7 @@ public class ClientApp {
 
         try
         {
-            joinGame(reader, writer, userReader);
+            joinGame(reader, writer, userReader, loginToken);
         }
         catch(IOException e)
         {

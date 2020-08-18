@@ -32,10 +32,14 @@ public class ClientServerProtocol {
      * Used to send a login token to the client
      */
     public static final String TOKEN_TEMPLATE = "TOKEN|%s\n";
-
     /**
-     * Allows the client to wait until a ready prompt is received
+     * Used to indicate to the client that the game has begun
      */
+    public static final String BEGIN_TEMPLATE = "BEGIN|%d\n";
+    /**
+     * Used to indicate to the client that the game has finished
+     */
+
     public static void waitForReady(BufferedReader reader) throws IOException
     {
         while(!(reader.readLine().split("\\|")[0]).equals("READY"));

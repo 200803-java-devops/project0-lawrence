@@ -3,6 +3,7 @@ package com.project0.lawrencedang;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.PrintStream;
+import java.util.Arrays;
 import java.util.List;
 
 import com.google.gson.Gson;
@@ -13,94 +14,142 @@ public class Client {
     private BufferedReader reader;
     private PrintStream writer;
     private BufferedReader userReader;
-    private GameState state;
+    private GameStateView state;
+    private int id;
     public Client(BufferedReader br, PrintStream ps, BufferedReader uinput)
     {
         reader = br;
         writer = ps;
         state = null;
         userReader = uinput;
+        id = -1;
     }
 
     public void run() throws IOException
     {
-        System.out.println(reader.readLine());
-        while(true)
+        waitForStart();
+        boolean turnEnd = false;
+        ClientServerProtocol.waitForReady(reader);
+        writer.println("GET_STATE");
+        processStateMessage();
+        while(turnEnd == false)
         {
-            String[] msgArray = readServerResponse();
-            if(msgArray[0].equals("MSG"))
+            String uOption = promptUserInput();
+            ClientServerProtocol.waitForReady(reader);
+            if(uOption.equals("DO_HIT"))
             {
-                System.out.println(msgArray[1]);
+                writer.println("DO_HIT");
+                expectReceived();
+                ClientServerProtocol.waitForReady(reader);
+                writer.println("GET_STATE");
             }
-            else if(msgArray[0].equals("STATE"))
+            else if (uOption.equals("DO_STAND"))
             {
-                updateState(msgArray[1]);
-                renderState();
-                if(checkGameEnded())
-                {
-                    printEndMessage();
-                    System.out.print("Press enter to exit...");
-                    System.in.read();
-                    break;
-                }
+                writer.println("DO_STAND");
+                expectReceived();
+                ClientServerProtocol.waitForReady(reader);
+                writer.println("GET_STATE");
             }
-            else if(msgArray[0].equals("READY"))
+            else
             {
-                String option = promptUserInput();
-                writer.println(option);
+                writer.println("GET_STATE");
             }
+            processStateMessage();
+            if(checkGameEnded())
+            {
+                turnEnd = true;
+            }
+        }
+        printEndMessage();
+        writer.println("DISCONNECT");
+    }
+
+    private boolean expectReceived() throws IOException
+    {
+        String message = reader.readLine();
+        if(ClientServerProtocol.getType(message).equals("RECEIVED"))
+        {
+            return true;
+        }
+        else
+        {
+            System.err.println("Expected RECEIVED| but got "+message);
+            return false;
         }
     }
 
-    private String[] readServerResponse() throws IOException
+    private void waitForStart() throws IOException
     {
-        return reader.readLine().split("\\|");
+        String serverMsg = "";
+        while(!ClientServerProtocol.getType(serverMsg).equals("BEGIN"))
+        {
+            serverMsg = reader.readLine();
+            System.out.println(ClientServerProtocol.getMessage(serverMsg));
+        }
+        this.id = Integer.valueOf(ClientServerProtocol.getMessage(serverMsg));
+    }
+
+    private void processStateMessage() throws IOException
+    {
+        String response = reader.readLine();
+        String type = ClientServerProtocol.getType(response);
+        String message = ClientServerProtocol.getMessage(response);
+        if(type.equals("STATE"))
+        {
+            updateState(message);
+            renderState();
+        }
+        else
+        {
+            System.err.println("Unexpected server response: " + type +"|" + message);
+        }
+        
     }
 
     private String promptUserInput() throws IOException
     {
         char option = (char)0;
-        while(option != '1' && option != '2')
+        while(option != '1' && option != '2' && option != '3')
         {
-            System.out.print("Options\n1: Hit\n2:Stand\nPlease select an option: ");
+            System.out.print("Options\n1: Hit\n2: Stand\n3: Refresh\nPlease select an option: ");
             int userInput = userReader.read();
+            //Clear input
             while(userReader.ready())
             {
                 userReader.readLine();
             }
             option = (char)userInput;
-            if(option != '1' && option !='2')
+            if(option != '1' && option !='2' && option != '3')
             {
                 System.out.println("That is not a valid option. Please try again.\n\n");
             }
         }
-        return String.valueOf(option);
+        if(option == '1')
+        {
+            return "DO_HIT";
+        }
+        else if (option == '2')
+        {
+            return "DO_STAND";
+        }
+        else
+        {
+            return "GET_STATE";
+        }
+
     }
 
     private void updateState(String stateString)
     {
-        String[] stateKVs = stateString.split("/");
-        String[] stateVals = new String[stateKVs.length];
-        for(int i = 0; i<stateKVs.length; i++)
-        {
-            stateVals[i] = stateKVs[i].split(":")[1];
-        }
-        GameState newState = new GameState();
         Gson deserializer = new Gson();
-        Card[] dealerHand = deserializer.fromJson(stateVals[0], Card[].class);
-        Card[] playerHand = deserializer.fromJson(stateVals[1], Card[].class);
-        for(Card card: dealerHand){newState.addDealerHand(card);}
-        for(Card card: playerHand){newState.addPlayerHand(card);}
-        newState.setPlayerState(deserializer.fromJson(stateVals[2], PlayerState.class));
-        newState.setEndState(deserializer.fromJson(stateVals[3], EndState.class));
-        this.state = newState;
+        this.state = deserializer.fromJson(stateString, GameStateView.class);
     }
 
     private void renderState()
     {
         String renderTemplate = "Dealer's cards: %s\tTotal: %d(%d)\nYour cards: %s\tTotal:%d(%d)\n";
-        List<Card> dealerHand = state.getDealerHand();
-        List<Card> playerHand = state.getPlayerHand();
+        List<Card> dealerHand = Arrays.asList(state.dealerHand);
+        List<Card> playerHand = Arrays.asList(state.playerHands[id]);
         String output = String.format(renderTemplate, displayHand(dealerHand), Card.lowValueOf(dealerHand), Card.highValueOf(dealerHand),
         displayHand(playerHand), Card.lowValueOf(playerHand), Card.highValueOf(playerHand));
         System.out.println(output);
@@ -119,12 +168,12 @@ public class Client {
 
     private boolean checkGameEnded()
     {
-        return state.getEndState() != EndState.NA;
+        return state.endStates[id] != EndState.NA;
     }
 
     private void printEndMessage()
     {
-        switch(state.getEndState())
+        switch(state.endStates[id])
         {
             case BLACKJACK:
                 System.out.println("You win!");

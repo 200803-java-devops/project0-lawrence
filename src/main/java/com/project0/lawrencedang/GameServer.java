@@ -6,10 +6,16 @@ import java.io.InputStreamReader;
 import java.io.PrintStream;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+
+import static com.project0.lawrencedang.ClientServerProtocol.READY;
+import static com.project0.lawrencedang.ClientServerProtocol.RECEIVED;
+import static com.project0.lawrencedang.ClientServerProtocol.REJECT;
 
 /**
  * GameServer is a class that acts as the server for the multiplayer blackjack game.
@@ -17,7 +23,7 @@ import java.util.concurrent.Executors;
  * and one thread to handle the game logic.
  */
 public class GameServer extends Server {
-    public static final int MAX_CONNECTIONS= 4;
+    public static final int MAX_CONNECTIONS= 1;
 
     private ExecutorService gameThreadPool;
     private ExecutorService handlerThreadPool;
@@ -30,7 +36,6 @@ public class GameServer extends Server {
      * @throws IOException
      */
     public GameServer(ServerSocket server) {
-
         super(server);
         gameThreadPool = Executors.newFixedThreadPool(2);
         handlerThreadPool = Executors.newFixedThreadPool(MAX_CONNECTIONS);
@@ -62,6 +67,30 @@ public class GameServer extends Server {
                 System.err.println("Problem while listening for connections.");
                 return;
             }
+            // Check login token
+            try
+            {
+                if(checkLogin(reader, writer) == false)
+                {
+                    socket.close();
+                    continue;
+                }
+            }
+            catch(IOException e)
+            {
+                System.err.println("Problem while verifying login");
+                try
+                {
+                    socket.close();
+                }
+                catch(IOException e2)
+                {
+                    e2.printStackTrace();
+                }
+                continue;
+            }
+            
+
             System.out.println("Client connected");
             CommunicationHandler handler = new CommunicationHandler(reader, writer, connections, comm);
             handler.greet();
@@ -74,6 +103,49 @@ public class GameServer extends Server {
         {
             handlerThreadPool.execute(h);
         }
+        try
+        {
+            handlerThreadPool.shutdown();
+            handlerThreadPool.awaitTermination(2, TimeUnit.HOURS);
+            System.err.println("Shutting down");
+            gameThreadPool.shutdownNow();
+        }
+        catch(InterruptedException e)
+        {
+            return;
+        }
+        
+    }
+
+    public boolean checkLogin(BufferedReader reader, PrintStream writer) throws IOException
+    {
+        writer.print(READY);
+        String clientResponse = reader.readLine();
+        TokenRepository repo = new TokenRepository();
+        try
+        {
+            if(clientResponse == null)
+            {
+                System.err.println("Client disconnected while verifying login");
+                return false;
+            }
+            else if(repo.tokenExists(clientResponse))
+            {
+                writer.print(RECEIVED);
+                return true;
+            }
+            else
+            {
+                writer.print(REJECT);
+                return false;
+            }
+        }
+        catch(SQLException e)
+        {
+            System.err.println("Problem while connecting to db");
+            return false;
+        }
+        
     }
 
 
@@ -92,6 +164,7 @@ public class GameServer extends Server {
         }
         System.out.println("Server started.");
         gameServer.listen();
+        System.out.println("Server shutdown");
         
     }
 }

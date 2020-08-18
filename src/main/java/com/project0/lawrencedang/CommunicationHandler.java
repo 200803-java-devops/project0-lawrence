@@ -53,51 +53,70 @@ public class CommunicationHandler implements Runnable
     {
         String userResponse = null;
         GameStateView state = null;
-        
-
-        while(true)
+        try
         {
-            printStream.print(READY);
+
+            printStream.printf(BEGIN_TEMPLATE, playerId);
+            while(true)
+            {
+                printStream.print(READY);
+                try
+                {
+                    if((userResponse = bufferedReader.readLine())== null)
+                    {
+                        System.out.println(userResponse);
+                        throw new IOException("Client disconnected while reading.");
+                    }
+                }
+                catch (IOException e)
+                {
+                    System.out.println("Error when communicating with client.");
+                    return;
+                }
+                userResponse = userResponse.trim();
+                ClientRequest request = ClientRequest.fromString(userResponse);
+                String serverResponse = "";
+                switch(request)
+                {
+                    case GET_STATE:
+                        try
+                        {
+                            commChannel.putRequest(this.playerId, request);
+                            state = commChannel.takeState(this.playerId);
+                            serverResponse = generateStateString(state);
+                        }
+                        catch(InterruptedException e)
+                        {
+                            System.err.println("Interrupted while handling client input");
+                            Thread.currentThread().interrupt();
+                        }
+                        break;
+                    case INVALID:
+                        serverResponse = REJECT;
+                        break;
+                    case DISCONNECT:
+                        System.out.println("Client disconnecting");
+                        return;
+                    default:
+                        commChannel.putRequest(this.playerId, request);
+                        serverResponse = RECEIVED;
+                        break;
+                }
+                printStream.print(serverResponse);
+            }
+        }
+        finally
+        {
             try
             {
-                if((userResponse = bufferedReader.readLine())== null)
-                {
-                    System.out.println(userResponse);
-                    throw new IOException("Client disconnected while reading.");
-                }
+                this.bufferedReader.close();
+                this.printStream.close();
             }
-            catch (IOException e)
+            catch(IOException e)
             {
-                System.out.println("Error when communicating with client.");
-                return;
+                e.printStackTrace();
             }
-            userResponse = userResponse.trim();
-            ClientRequest request = ClientRequest.fromString(userResponse);
-            String serverResponse = "";
-            switch(request)
-            {
-                case GET_STATE:
-                    try
-                    {
-                        commChannel.putRequest(this.playerId, request);
-                        state = commChannel.takeState(this.playerId);
-                        serverResponse = generateStateString(state);
-                    }
-                    catch(InterruptedException e)
-                    {
-                        System.err.println("Interrupted while handling client input");
-                        Thread.currentThread().interrupt();
-                    }
-                    break;
-                case INVALID:
-                    serverResponse = REJECT;
-                    break;
-                default:
-                    commChannel.putRequest(this.playerId, request);
-                    serverResponse = RECEIVED;
-                    break;
-            }
-            printStream.print(serverResponse);
+            
         }
     }
 
