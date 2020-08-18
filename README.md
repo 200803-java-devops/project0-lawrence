@@ -1,5 +1,5 @@
 # project0-lawrence
-An simplified, multiplayer blackjack game on the command-line.
+An simplified, multiplayer blackjack game on the command-line.  
 
 ## Features
 - [x] Allows three players to connect to each other simultaneously.
@@ -15,7 +15,7 @@ To compile:
 mvn compile -q
 ```
 ### Server
-Both the game server and the login server must be run.
+Both the game server and the login server must be run.  
 To run the login server:
 ```
 mvn exec:java@login-server -q
