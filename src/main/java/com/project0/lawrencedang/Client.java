@@ -1,6 +1,8 @@
 package com.project0.lawrencedang;
 
 import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.util.Arrays;
@@ -71,6 +73,19 @@ public class Client {
         printEndMessage();
         renderState();
         writer.println("DISCONNECT");
+        System.out.println("Would you like to save the results of thids game to a file? Enter a file name if you do, or press enter to skip");
+        String fname = userReader.readLine().trim();
+        if(fname.equals(""))
+        {
+            return;
+        }
+        else
+        {
+            FileWriter fileWriter = new FileWriter(new File(fname));
+            fileWriter.write(generateStateString());
+            fileWriter.flush();
+            fileWriter.close();
+        }
     }
 
     private void waitForEnd() throws IOException
@@ -128,8 +143,7 @@ public class Client {
         else
         {
             System.err.println("Unexpected server response: " + type +"|" + message);
-        }
-        
+        } 
     }
 
     private String promptUserInput() throws IOException
@@ -171,14 +185,19 @@ public class Client {
         this.state = deserializer.fromJson(stateString, GameStateView.class);
     }
 
-    private void renderState()
+    private String generateStateString()
     {
         String renderTemplate = "Dealer's cards: %s\tTotal: %d(%d)\nYour cards: %s\tTotal:%d(%d)\n";
         List<Card> dealerHand = Arrays.asList(state.dealerHand);
         List<Card> playerHand = Arrays.asList(state.playerHands[id]);
         String output = String.format(renderTemplate, displayHand(dealerHand), Card.lowValueOf(dealerHand), Card.highValueOf(dealerHand),
         displayHand(playerHand), Card.lowValueOf(playerHand), Card.highValueOf(playerHand));
-        System.out.println(output);
+        return output;
+    }
+
+    private void renderState()
+    {
+        System.out.println(generateStateString());
         System.out.println();
     }
 
