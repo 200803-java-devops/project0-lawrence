@@ -6,12 +6,16 @@ import java.io.PrintStream;
 import static com.project0.lawrencedang.ClientServerProtocol.READY;
 import static com.project0.lawrencedang.ClientServerProtocol.REJECT;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
  * Superclass for login server handlers.
  */
 public abstract class LoginServerHandler implements Runnable {
     protected BufferedReader reader;
     protected PrintStream writer;
+    static final Logger logger = LoggerFactory.getLogger(LoginServerHandler.class);
 
     public LoginServerHandler(BufferedReader reader, PrintStream writer) {
         this.reader = reader;
@@ -35,11 +39,11 @@ public abstract class LoginServerHandler implements Runnable {
             username = new Username(name);
             if(!username.isValidUsername())
             {
-                System.err.println("Username " + username.getString() +" invalid");
+                logger.debug("Username " + username.getString() +" invalid");
                 writer.print(REJECT);
             }
         }
-        System.out.println("got username");
+        logger.debug("got username");
         return username;
     }
     

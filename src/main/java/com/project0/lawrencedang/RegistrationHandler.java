@@ -8,12 +8,16 @@ import java.io.IOException;
 import java.io.PrintStream;
 import java.sql.SQLException;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
  * A RegistrationHandler handles client attempts to register a new login name.
  * If the client supplies an unregistered and valid login name, the name will be added to the database
  */
 public class RegistrationHandler extends LoginServerHandler {
     UserRepository userDao;
+    static final Logger logger = LoggerFactory.getLogger(RegistrationHandler.class);
 
     /**
      * Creates a RegistrationHandler receiving input on the BufferedReader and sending messages on the PrintStream
@@ -40,7 +44,7 @@ public class RegistrationHandler extends LoginServerHandler {
             }
             catch(IOException e)
             {
-                System.err.println("Problem while getting username from client");
+                logger.warn("Problem while getting username from client");
                 return;
             }
             
@@ -50,12 +54,12 @@ public class RegistrationHandler extends LoginServerHandler {
             }
             catch(SQLException e)
             {
-                System.err.println("Problem checking if username is registered");
+                logger.warn("Problem checking if username is registered");
                 return;
             }
             if(registered)
             {
-                System.out.println("Client tried to register a registered name");
+                logger.debug("Client tried to register a registered name");
                 writer.print(REJECT);
             }
             else
@@ -63,13 +67,13 @@ public class RegistrationHandler extends LoginServerHandler {
                 try
                 {
                     userDao.put(username.getString());
-                    System.out.println("Created new user " + username.getString());
+                    logger.info("Created new user " + username.getString());
                     writer.print(RECEIVED);
                     return;
                 }
                 catch(SQLException e)
                 {
-                    System.err.println("Failed to register new user.");
+                    logger.warn("Failed to register new user.");
                     return;
                 }
             }

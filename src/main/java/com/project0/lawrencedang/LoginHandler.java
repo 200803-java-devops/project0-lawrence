@@ -8,6 +8,9 @@ import java.io.IOException;
 import java.io.PrintStream;
 import java.sql.SQLException;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
  * A LoginHandler handles logins from a client. Upon a successful login, the LoginHandler creates a new token in the database and sends the client
  * the token string.
@@ -16,6 +19,7 @@ public class LoginHandler extends LoginServerHandler {
     public final int tokenLength = 20;
     TokenRepository tokenDao;
     UserRepository userDao;
+    final static Logger logger = LoggerFactory.getLogger(LoginHandler.class);
 
     /**
      * Create a new login handler that receives input on the BufferedReader and sends messages through the PrintStream
@@ -42,7 +46,7 @@ public class LoginHandler extends LoginServerHandler {
             }
             catch(IOException e)
             {
-                System.err.println("Problem while getting username from client");
+                logger.warn("Problem while getting username from client");
                 return;
             }
 
@@ -52,13 +56,13 @@ public class LoginHandler extends LoginServerHandler {
             }
             catch(SQLException e)
             {
-                System.err.println("Problem while checking username");
+                logger.warn("Problem while checking username");
                 return;
             }
 
             if(!registered)
             {
-                System.out.println("User entered a non-registered name");
+                logger.debug("User entered a non-registered name");
                 writer.print(REJECT);
             }
             else
@@ -70,14 +74,14 @@ public class LoginHandler extends LoginServerHandler {
                 }
                 catch(SQLException e)
                 {
-                    System.err.println("Problem while getting user from database");
+                    logger.warn("Problem while getting user from database");
                     return;
                 }
                 
                 String token = generateTokenString();
                 putToken(user.getUserId(), token);
                 writer.print(String.format(TOKEN_TEMPLATE, token));
-                System.out.println("Generated new token " + token);
+                logger.info("Generated new token " + token);
             }
         }
         while(!registered);
@@ -109,7 +113,7 @@ public class LoginHandler extends LoginServerHandler {
         }
         catch(SQLException e)
         {
-            System.err.println("Failed to register token.");
+            logger.warn("Failed to register token.");
             return;
         }
     }
