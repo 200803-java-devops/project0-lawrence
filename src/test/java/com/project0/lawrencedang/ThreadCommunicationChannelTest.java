@@ -1,5 +1,6 @@
 package com.project0.lawrencedang;
 
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import org.junit.Before;
@@ -8,35 +9,25 @@ import org.junit.Test;
 public class ThreadCommunicationChannelTest {
     ThreadCommunicationChannel commChannel;
 
-    public class TakeOptionLockHelper implements Runnable
-    {
-        public void run()
-        {
-            commChannel.takeOption();
-        }
-    }
-
-    public class PutOptionLockHelper implements Runnable
-    {
-        public void run()
-        {
-            commChannel.putOption(1);
-        }
-    }
-
     public class TakeStateLockHelper implements Runnable
     {
-        public void run()
+        public int id;
+        public ThreadCommunicationChannel comm;
+        public TakeStateLockHelper(int id, ThreadCommunicationChannel comm)
         {
-            commChannel.takeState();
+            this.id = id;
+            this.comm = comm;
         }
-    }
-
-    public class PutStateLockHelper implements Runnable
-    {
         public void run()
         {
-            commChannel.putState(new GameState());
+            try
+            {
+                this.comm.takeState();
+            }
+            catch(InterruptedException e)
+            {
+                System.err.println("Interrupted");
+            }
         }
     }
     
@@ -47,62 +38,57 @@ public class ThreadCommunicationChannelTest {
     }
 
     @Test
-    public void putOptionLockTest() throws InterruptedException
-    {
-        commChannel.putOption(1);
-        Thread helper = new Thread(new PutOptionLockHelper());
-        helper.start();
-        Thread.sleep(1000);
-        assertTrue(helper.isAlive());
-    }
-
-    @Test
-    public void takeOptionLockTest() throws InterruptedException
-    {
-        Thread helper = new Thread(new TakeOptionLockHelper());
-        helper.start();
-        Thread.sleep(1000);
-        assertTrue(helper.isAlive());
-    }
-
-    @Test
-    public void putStateLockTest() throws InterruptedException
-    {
-        commChannel.putState(new GameState());
-        Thread helper = new Thread(new PutStateLockHelper());
-        helper.start();
-        Thread.sleep(1000);
-        assertTrue(helper.isAlive());
-    }
-
-    @Test
     public void takeStateLockTest() throws InterruptedException
     {
-        Thread helper = new Thread(new TakeStateLockHelper());
+        Thread helper = new Thread(new TakeStateLockHelper(0, commChannel));
         helper.start();
         Thread.sleep(1000);
         assertTrue(helper.isAlive());
+
+
+        ThreadCommunicationChannel comm2 = new ThreadCommunicationChannel();
+        Thread helper2 = new Thread(new TakeStateLockHelper(1, comm2));
+        helper2.start();
+        comm2.putState(new GameStateView(new GameState()));
+        Thread.sleep(1000);
+        assertFalse(helper2.isAlive());
     }
 
     @Test
-    public void optionValueTest()
+    public void requestValueTest()
     {
-        commChannel.putOption(5);
-        assert(commChannel.takeOption()==5);
-        commChannel.putOption(11);
-        assert(commChannel.takeOption()==11);
+        commChannel.putRequest(ClientRequest.DO_STAND);
+        commChannel.putRequest(ClientRequest.DO_SURRENDER);
+        assert(commChannel.takeRequest().getClientRequest()==ClientRequest.DO_STAND);
+        assert(commChannel.takeRequest().getClientRequest()==ClientRequest.DO_SURRENDER);
     }
 
     @Test
     public void stateValueTest()
     {
         GameState state = new GameState();
-        commChannel.putState(state);
-        assertTrue(commChannel.takeState() == state);
+        GameStateView view = new GameStateView(state);
+        try
+        {
+            commChannel.putState(view);
+            assertTrue(commChannel.takeState() == view);
+        }
+        catch(InterruptedException e)
+        {
+            System.err.println("Interrupted");
+        }
 
         GameState state2 = new GameState();
         state2.addDealerHand(Card.Ten);
-        commChannel.putState(state2);
-        assertTrue(commChannel.takeState() == state2);
+        GameStateView view2 = new GameStateView(state2);
+        try
+        {
+            commChannel.putState(view2);
+            assertTrue(commChannel.takeState() == view2);
+        }
+        catch(InterruptedException e)
+        {
+            System.err.println("Interrupted");
+        }
     }
 }
