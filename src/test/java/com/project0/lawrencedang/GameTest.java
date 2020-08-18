@@ -19,9 +19,7 @@ public class GameTest
         commChannel = new ThreadCommunicationChannel();
         game = new Game(1, commChannel);
     }
-    /**
-     * Rigorous Test :-)
-     */
+
     @Test(timeout = 3000)
     public void returnsCorrectState() throws InterruptedException
     {

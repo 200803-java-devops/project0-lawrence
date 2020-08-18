@@ -23,7 +23,7 @@ import static com.project0.lawrencedang.ClientServerProtocol.REJECT;
  * and one thread to handle the game logic.
  */
 public class GameServer extends Server {
-    public static final int MAX_CONNECTIONS= 2;
+    public static final int MAX_CONNECTIONS= 3;
 
     private ExecutorService gameThreadPool;
     private ExecutorService handlerThreadPool;
