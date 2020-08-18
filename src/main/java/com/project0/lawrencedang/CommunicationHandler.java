@@ -101,7 +101,9 @@ public class CommunicationHandler implements Runnable
         }
     }
 
-
+    /**
+     * Generate the string representation of a GameStateView
+     */
     public static String generateStateString(GameStateView state)
     {
         Gson jsonSerializer = new Gson();

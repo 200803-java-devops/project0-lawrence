@@ -9,13 +9,22 @@ import java.net.Socket;
 import static com.project0.lawrencedang.ClientServerProtocol.READY;
 import static com.project0.lawrencedang.ClientServerProtocol.REJECT;
 
+/**
+ * Entry point to the login server application.
+ */
 public class LoginServer extends Server {
 
+    /**
+     * Creates a new LoginServer with the specified server socket.
+     */
     public LoginServer(ServerSocket server)
     {
         super(server);
     }
     
+    /**
+     * Listen for connections and handle client input
+     */
     public void listen()
     {
         while(true)

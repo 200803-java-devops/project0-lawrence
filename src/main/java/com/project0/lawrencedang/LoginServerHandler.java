@@ -6,6 +6,9 @@ import java.io.PrintStream;
 import static com.project0.lawrencedang.ClientServerProtocol.READY;
 import static com.project0.lawrencedang.ClientServerProtocol.REJECT;
 
+/**
+ * Superclass for login server handlers.
+ */
 public abstract class LoginServerHandler implements Runnable {
     protected BufferedReader reader;
     protected PrintStream writer;
@@ -15,6 +18,9 @@ public abstract class LoginServerHandler implements Runnable {
         this.writer = writer;
     }
 
+    /**
+     * Prompt the client for a username, looping until the client enters a valid username.
+     */
     public Username getUsername() throws IOException
     {
         Username username = new Username();

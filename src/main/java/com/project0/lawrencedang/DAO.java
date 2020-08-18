@@ -4,10 +4,19 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 
+/**
+ * Superclass for data access objects that interface with the database.
+ * @param <T> The type representing an entry in the database i.e. a user or token
+ */
 public abstract class DAO<T> {
     public abstract T get(String pkey) throws SQLException;
     public abstract boolean put(T t) throws SQLException;
 
+    /**
+     * Attempts to establish a connection to the database and returns the connection.
+     * @return the Connection object to access the database.
+     * @throws SQLException
+     */
     protected Connection getConnection() throws SQLException
     {
         Connection connection = null;

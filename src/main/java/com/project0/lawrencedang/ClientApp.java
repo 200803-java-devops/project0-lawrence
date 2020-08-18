@@ -11,7 +11,9 @@ import java.net.SocketException;
 import static com.project0.lawrencedang.ClientServerProtocol.waitForReady;
 
 
-
+/**
+ * The entry point for the client application.
+ */
 public class ClientApp {
 
 
@@ -69,8 +71,7 @@ public class ClientApp {
         return token;
     }
 
-
-    public static void register(BufferedReader reader, PrintStream writer, BufferedReader userReader) throws IOException
+    private static void register(BufferedReader reader, PrintStream writer, BufferedReader userReader) throws IOException
     {
         waitForReady(reader);
         writer.println("REGISTER");
