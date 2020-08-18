@@ -73,7 +73,7 @@ public class Client {
         printEndMessage();
         renderState();
         writer.println("DISCONNECT");
-        System.out.println("Would you like to save the results of thids game to a file? Enter a file name if you do, or press enter to skip");
+        System.out.println("Would you like to save the results of this game to a file? Enter a file name if you do, or press enter to skip");
         String fname = userReader.readLine().trim();
         if(fname.equals(""))
         {

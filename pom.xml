@@ -9,8 +9,6 @@
   <version>0.0.1</version>
 
   <name>project0</name>
-  <!-- FIXME change it to the project's website -->
-  <url>http://www.example.com</url>
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -78,6 +76,40 @@
         <plugin>
           <artifactId>maven-project-info-reports-plugin</artifactId>
           <version>3.0.0</version>
+        </plugin>
+        <plugin>
+            <groupId>org.codehaus.mojo</groupId>
+            <artifactId>exec-maven-plugin</artifactId>
+            <version>3.0.0</version>
+            <executions>
+                <execution>
+                    <id>client</id>
+                    <goals>
+                        <goal>java</goal>
+                    </goals>
+                    <configuration>
+                        <mainClass>com.project0.lawrencedang.ClientApp</mainClass>
+                    </configuration>
+                </execution>
+                <execution>
+                    <id>game-server</id>
+                    <goals>
+                        <goal>java</goal>
+                    </goals>
+                    <configuration>
+                        <mainClass>com.project0.lawrencedang.GameServer</mainClass>
+                    </configuration>
+                </execution>
+                <execution>
+                    <id>login-server</id>
+                    <goals>
+                        <goal>java</goal>
+                    </goals>
+                    <configuration>
+                        <mainClass>com.project0.lawrencedang.LoginServer</mainClass>
+                    </configuration>
+                </execution>
+            </executions>
         </plugin>
       </plugins>
     </pluginManagement>
